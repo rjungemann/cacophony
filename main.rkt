@@ -9,18 +9,17 @@
          "receiver-router.rkt"
          "logging.rkt")
 
-#| (immediately (λ () (<< #"/hello" "foo" "bar"))) |#
-#| (clock-immediately! (current-clock) |#
-#|   (lambda λ (c t) |#
-#|     (osc-sender-send! (current-sender) (osc-message #"/hello" (list "foo" "bar"))) |#
+#| (now (λ () (<< #"/hello" "foo" "bar"))) |#
+#| (clock-at! (current-clock) (now) |#
+#|   (λ (c t) (osc-sender-send! (current-sender) (osc-message #"/hello" (list "foo" "bar"))) |#
 
-#| (every (4n) (λ (displayln "Tick"))) |#
-#| (clock-every! (current-clock) (interval-beats (4n)) (interval-ppqns (4n)) |#
-#|   (lambda λ (c t) |#
-#|     (displayln "Tick"))) |#
+#| (every (4n) (λ () (displayln "Tick"))) |#
+#| (clock-every! (current-clock) (4n) (λ (c t) (displayln "Tick"))) |#
 
-#| (define status (ch #"/status")) |#
-#| (<< status) |#
+#| (>> #"/status" (λ (m) (printf "Received ~a\n" m))) |#
+
+(define (stop! b)
+  (set-box! b #f))
 
 (define (basic-prompt)
   (let ([in ((current-get-interaction-input-port))])
@@ -38,33 +37,29 @@
     (define sender (make-osc-sender "127.0.0.1" 13698))
     (define clock (make-clock 120.0 24.0))
     (define router (make-router))
+    (define mutex (make-semaphore 1))
 
     (osc-receiver-start! receiver)
-    (osc-sender-start! sender)
-    (osc-sender-send! sender (osc-message #"/status" empty))
     (clock-start! clock)
+    (printf "started-at ~a\n" (clock-started-at clock))
+    (osc-sender-start! sender)
     (receiver-router-start! receiver router)
 
-    #| (clock-after! clock 2 4 |#
-    #|   (λ (c t) |#
-    #|     (printf "clock-after! ~a ~a\n" (clock-beats c t) (clock-ppqns c t)))) |#
+    (clock-every! clock 60.0 (λ (c t) (printf "Every 2.5 beats\n")))
+    (clock-every! clock 24.0 (λ (c t) (printf "Every beat\n")))
 
-    (clock-every-beat! clock
-      (λ (c t)
-        (printf "every-beat! ~a ~a\n" (clock-beats c t) (clock-ppqns c t))))
-
-    #| (clock-every-ppqn! clock |#
-    #|   (λ (c t) |#
-    #|     (printf "every-ppqn! ~a ~a\n" (clock-beats c t) (clock-ppqns c t)))) |#
-
-    (define l (router-add-listener! router #"/status"))
     (thread
       (λ ()
         (let loop ()
-          (define data (listener-get! l))
-          (and data (printf "!!! ~a\n" data))
-          (sleep 0.25)
+          (clock-tick! clock)
+          (osc-sender-tick! sender)
+          (osc-receiver-tick! receiver)
+          (receiver-router-tick! receiver router)
           (loop))))
+
+    (osc-sender-send! sender (osc-message #"/status" empty))
+
+    (router-add-listener! router #"/status" (λ (data) (printf "!!! ~a\n" data)))
 
     (read-eval-print-loop)))
 
@@ -74,3 +69,4 @@
 #| (displayln (location)) |#
 #| (parameterize ([location "there"]) |#
 #|   (displayln (location))) |#
+

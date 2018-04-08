@@ -4,18 +4,15 @@
          "receiver.rkt"
          "router.rkt")
 
-(provide receiver-router-start!)
+(provide receiver-router-start!
+         receiver-router-tick!)
 
 (define (receiver-router-start! receiver router)
-  (define stopper (box #t))
-  (thread
-    (λ ()
-       (let loop ()
-         (define message (osc-receiver-get-next-message! receiver))
-         (and message (router-trigger! router
-                                       (osc-message-address message)
-                                       (append (list (osc-message-address message))
-                                               (osc-message-args message))))
-         (and (unbox stopper)
-              (loop)))))
-  stopper)
+  (void))
+
+(define (receiver-router-tick! receiver router)
+  (define message (osc-receiver-get-next-message! receiver))
+  (and message (router-trigger! router
+                                (osc-message-address message)
+                                (append (list (osc-message-address message))
+                                        (osc-message-args message)))))
