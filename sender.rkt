@@ -27,7 +27,6 @@
         (let ([message (async-channel-try-get (osc-sender-channel sender))])
           (and message
                (begin
-                 (printf "sending value on channel ~a\n" message)
                  (send! sender message)))
           (loop))))))
 

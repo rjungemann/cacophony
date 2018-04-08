@@ -8,17 +8,20 @@
   now
   clock-tick!
   clock-start!
+  clock-synchronize!
   clock-at!
   clock-on!
   clock-after!
+  clock-immediately!
   set-clock-bpm-ppqn!
   clock-beats
   clock-ppqns
-  every-beat!
-  every-ppqn!
+  clock-every-beat!
+  clock-every-ppqn!
+  clock-clear!
   stop!)
 
-(struct clock (events started-at bpm ppqn) #:mutable)
+(struct clock (events started-at bpm ppqn clearing? mutex) #:mutable)
 
 (define (bpm->ms bpm)
   (/ 60000.0 bpm))
@@ -27,7 +30,7 @@
   (/ 60000.0 (* bpm ppqn)))
 
 (define (make-clock bpm ppqn)
-  (clock '() -1 bpm ppqn))
+  (clock '() -1 bpm ppqn #f (make-semaphore 1)))
 
 (define (now)
   (current-inexact-milliseconds))
@@ -41,11 +44,25 @@
         (append acc (list n)))))
 
 (define (clock-tick! c)
-  (let ([events (clock-events c)])
-    ; This is so `clock-at!` and `clock-on!` will register new events.
-    (set-clock-events! c '())
-    (set-clock-events! c (append (foldl (clock-event-reducer c (now)) '() events)
-                                 (clock-events c)))))
+  (call-with-semaphore
+    (clock-mutex c)
+    (λ ()
+      ; If clock is to be cleared, then clear it before ticking.
+      (if (clock-clearing? c)
+        (set-clock-events! c '())
+        (set-clock-clearing?! c #f))
+      ; Handle events.
+      (let ([events (clock-events c)])
+        ; This is so `clock-at!` and `clock-on!` will register new events.
+        (set-clock-events! c '())
+        (set-clock-events! c (append (foldl (clock-event-reducer c (now)) '() events)
+                                     (clock-events c)))))))
+
+(define (clock-synchronize! c cb)
+  (call-with-semaphore
+    (clock-mutex c)
+    (λ ()
+      (cb c))))
 
 (define (clock-at! c time cb)
   (set-clock-events! c (append (clock-events c) (list (list time cb)))))
@@ -70,8 +87,18 @@
   (define next-ppqn (modulo next-raw-ppqn ppqn))
   (clock-on! c next-beat next-ppqn cb))
 
+(define (clock-immediately! c cb)
+  (clock-at! c (now) cb))
+
 (define (clock-start! c)
-  (set-clock-started-at! c (now)))
+  (define stopper (box #t))
+  (thread
+    (λ ()
+      (let loop ()
+        (and (unbox stopper) (clock-tick! c))
+        (loop))))
+  (set-clock-started-at! c (now))
+  stopper)
 
 (define (set-clock-bpm-ppqn! c bpm ppqn)
   (set-clock-bpm! bpm)
@@ -91,7 +118,7 @@
   (define since (- t started-at))
   (modulo (floor (/ since (ppqn->ms bpm ppqn))) ppqn))
 
-(define (every-beat! c cb)
+(define (clock-every-beat! c cb)
   (define stopper (box #t))
   (define (every-beat c t)
     (cb c t)
@@ -100,7 +127,7 @@
   (clock-on! c (+ 1 (clock-beats c (now))) 0 every-beat)
   stopper)
 
-(define (every-ppqn! c cb)
+(define (clock-every-ppqn! c cb)
   (define stopper (box #t))
   (define t (now))
   (define ppqn (clock-ppqn c))
@@ -121,6 +148,9 @@
          (clock-on! c next-beat next-ppqn every-ppqn)))
   (clock-on! c next-beat next-ppqn every-ppqn)
   stopper)
+
+(define (clock-clear! c)
+  (set-clock-clearing?! c #t))
 
 (define (stop! b)
   (set-box! b #f))
