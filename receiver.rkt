@@ -2,21 +2,20 @@
 
 (require racket/async-channel
          racket/udp
-         osc)
+         osc
+         "router.rkt")
 
-(provide
-  (struct-out osc-receiver)
-  make-osc-receiver
-  osc-receiver-start!
-  osc-receiver-tick!
-  osc-receiver-stop!
-  osc-receiver-get-next-message!)
+(provide (struct-out osc-receiver)
+         make-osc-receiver
+         osc-receiver-start!
+         osc-receiver-tick!
+         osc-receiver-add-listener!)
 
-(struct osc-receiver (socket channel port buffer running?)
+(struct osc-receiver (socket port buffer running? router)
   #:mutable)
 
 (define (make-osc-receiver port)
-  (osc-receiver (udp-open-socket) (make-async-channel) port (make-bytes 10000 0) #f))
+  (osc-receiver (udp-open-socket) port (make-bytes 10000 0) #f (make-router)))
 
 (define (osc-receiver-start! r)
   (let ([socket (osc-receiver-socket r)]
@@ -30,11 +29,12 @@
                 [(buffer) (osc-receiver-buffer r)]
                 [(len hostname src-port) (udp-receive!* socket buffer)])
     (and len
-         (let ([message (bytes->osc-element (subbytes buffer 0 len))])
-           (async-channel-put (osc-receiver-channel r) message)))))
+         (let ([message (bytes->osc-element (subbytes buffer 0 len))]
+               [router (osc-receiver-router r)])
+           (router-trigger! router
+                            (osc-message-address message)
+                            (append (list (osc-message-address message))
+                                    (osc-message-args message)))))))
 
-(define (osc-receiver-stop! receiver)
-  (set-osc-receiver-running?! #f))
-
-(define (osc-receiver-get-next-message! r)
-  (async-channel-try-get (osc-receiver-channel r)))
+(define (osc-receiver-add-listener! r route cb)
+  (router-add-listener! (osc-receiver-router r) route cb))

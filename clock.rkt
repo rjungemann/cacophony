@@ -96,7 +96,6 @@
   (modulo (floor (/ since (ppqn->ms bpm ppqn))) ppqn))
 
 (define (clock-every! c ppqn cb)
-  (define bpm (clock-bpm c))
   (define ppqns (modulo ppqn (clock-ppqn c)))
   (define beats (floor (/ ppqn (clock-ppqn c))))
   (define stopper (box #t))
