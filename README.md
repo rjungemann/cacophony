@@ -66,17 +66,17 @@ Run the "Tester 2" Max project, then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule the drums.
-(define snare-drum? (rotate (list #f #t)))
+(define snare? (rotate (list #f #t)))
 (every (4n) (λ (e)
-  (<< s #"/bass-drum" empty)
-  (and (snare-drum?) (<< s #"/snare-drum" empty)) ))
+  (<< s #"/bass-drum")
+  (and (snare?) (<< s #"/snare-drum")) ))
 
 ; Schedule the bass and lead.
-(define bass-note (rotate '(24 24 27 24 34 36 22)))
-(define lead-note (rotate '(48 50 51 48 50 46 53)))
+(define bass (rotate '(24 24 27 24 34 36 22)))
+(define lead (rotate '(48 50 51 48 50 46 53)))
 (every (8n) (λ (e)
-  (<< s #"/bass" (list (bass-note)))
-  (<< s #"/lead" (list (lead-note)))))
+  (<< s #"/bass" (bass))
+  (<< s #"/lead" (lead))))
 ```
 
 ## Livecoding
@@ -89,6 +89,7 @@ TODO...
 
 ## TODO
 
-* Changing ppqn has strange behavior
-* `remove-receiver`
-* `remove-sender`
+* Changing PPQN has strange behavior (changing BPM works well though)
+* TCP eval Server
+* Tests
+* Docs

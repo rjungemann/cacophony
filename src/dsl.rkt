@@ -63,7 +63,7 @@
 (define (every pulses cb)
   (clock-every! (current-clock) pulses cb))
 
-(define (<< s route args)
+(define (<< s route . args)
   (osc-sender-send! s (osc-message route args)))
 
 (define (>> r route cb)

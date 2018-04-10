@@ -1,3 +1,3 @@
 #!/bin/sh
 
-raco exe src/cacophony.rkt -o cacophony
+raco exe -o cacophony src/cacophony.rkt
