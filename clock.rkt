@@ -1,110 +1,117 @@
 #lang racket
 
 (provide
+  (struct-out clock)
+  (struct-out clock-event)
+  now
   bpm->ms
   ppqn->ms
-  (struct-out clock)
   make-clock
-  now
+  make-clock-event
+  #| clock-pulse-tick! |#
+  #| clock-tick-tick! |#
   clock-tick!
   clock-start!
+  clock-stop!
   clock-at!
   clock-on!
   clock-after!
-  set-clock-bpm-ppqn!
-  clock-beats
-  clock-ppqns
   clock-every!
   clock-clear!)
 
-(struct clock (events started-at bpm ppqn clearing?) #:mutable)
+(require rx/event-emitter)
 
-(define (bpm->ms bpm)
-  (/ 60000.0 bpm))
+; TODO: Test bpm changes
 
-(define (ppqn->ms bpm ppqn)
-  (/ 60000.0 (* bpm ppqn)))
+(struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent] #:mutable)
+(struct clock-event [clock t])
+
+(define (now) (current-inexact-milliseconds))
+(define (bpm->ms bpm) (/ 60000.0 bpm))
+(define (ppqn->ms bpm ppqn) (/ (/ 60000.0 bpm) ppqn))
 
 (define (make-clock bpm ppqn)
-  (clock '() -1 bpm ppqn #f))
+  (clock bpm ppqn 0 0 -1 -1 #f (make-event-emitter) (make-event-emitter)))
 
-(define (now)
-  (current-inexact-milliseconds))
+(define (make-clock-event c t)
+  (clock-event c t))
 
-(define (clock-event-reducer c t)
-  (lambda (n acc)
-    (if (<= (first n) t)
-        (begin
-          (apply (second n) (list c t))
-          acc)
-        (append acc (list n)))))
+(define (clock-pulse-tick! c t)
+  (define beat (clock-beat c))
+  (define pulse (clock-pulse c))
+  (trigger (clock-pulse-vent c) (make-clock-event c t))
+  (define raw-new-pulse (+ pulse 1))
+  (define new-pulse (modulo raw-new-pulse (clock-ppqn c)))
+  (define new-beat (+ beat (floor (/ raw-new-pulse (clock-ppqn c)))))
+  (set-clock-beat! c new-beat)
+  (set-clock-pulse! c new-pulse))
+
+(define (clock-tick-tick! c t)
+  (trigger (clock-tick-vent c) (make-clock-event c t)))
 
 (define (clock-tick! c)
-  ; If clock is to be cleared, then clear it before ticking.
-  (if (clock-clearing? c)
-    (set-clock-events! c '())
-    (set-clock-clearing?! c #f))
-  ; Handle events.
-  (let ([events (clock-events c)])
-    ; This is so `clock-at!` and `clock-on!` will register new events.
-    (set-clock-events! c '())
-    (set-clock-events! c (append (foldl (clock-event-reducer c (now)) '() events)
-                                 (clock-events c)))))
-
-(define (clock-at! c time cb)
-  (set-clock-events! c (append (clock-events c) (list (list time cb)))))
-
-(define (clock-on! c beats ppqns cb)
-  (define bpm (clock-bpm c))
-  (define ppqn (clock-ppqn c))
-  (define started-at (clock-started-at c))
-  (define time (+ started-at
-                  (+ (* (bpm->ms bpm) beats)
-                     (* (ppqn->ms bpm ppqn) ppqns))))
-  (clock-at! c time cb))
-
-(define (clock-after! c after-beats after-ppqns cb)
-  (define bpm (clock-bpm c))
-  (define ppqn (clock-ppqn c))
   (define t (now))
-  (define beats (clock-beats c t))
-  (define ppqns (clock-ppqns c t))
-  (define next-raw-ppqn (+ (* (+ after-beats beats) ppqn) (+ after-ppqns ppqns)))
-  (define next-beat (floor (/ next-raw-ppqn ppqn)))
-  (define next-ppqn (modulo next-raw-ppqn ppqn))
-  (clock-on! c next-beat next-ppqn cb))
+  (clock-tick-tick! c t)
+  (define since (- t (clock-previous-at c)))
+  (define every-ms (ppqn->ms (clock-bpm c) (clock-ppqn c)))
+  (and (<= every-ms since)
+       (begin
+         (clock-pulse-tick! c t)
+         (set-clock-previous-at! c t))))
 
 (define (clock-start! c)
-  (set-clock-started-at! c (now)))
+  (set-clock-started-at! c (now))
+  (set-clock-previous-at! c (now))
+  (set-clock-running?! c #t))
 
-(define (set-clock-bpm-ppqn! c bpm ppqn)
-  (set-clock-bpm! bpm)
-  (set-clock-ppqn! ppqn)
-  (set-clock-started-at! c (now)))
+(define (clock-stop! c)
+  (set-clock-running?! c #f))
 
-(define (clock-beats c t)
-  (define bpm (clock-bpm c))
-  (define started-at (clock-started-at c))
-  (define since (- t started-at))
-  (floor (/ since (bpm->ms bpm))))
+(define (clock-at! c t cb)
+  (add-listener!
+    (clock-tick-vent c)
+    (λ (e)
+      (and (<= (clock-event-t e) t)
+           (begin
+             (cb e)
+             (remove-listener! (clock-tick-vent (clock-event-clock e)) cb))))))
 
-(define (clock-ppqns c t)
-  (define bpm (clock-bpm c))
-  (define ppqn (clock-ppqn c))
-  (define started-at (clock-started-at c))
-  (define since (- t started-at))
-  (modulo (floor (/ since (ppqn->ms bpm ppqn))) ppqn))
+; NOTE: Uses `beat` and `pulse` as args instead of `pulses`!
+(define (clock-on! c beat pulse cb)
+  (define (new-cb e)
+    (define c (clock-event-clock e))
+    (and (<= (clock-beat c) beat)
+         (<= (clock-pulse c) pulse)
+         (begin
+           (cb e)
+           (remove-listener! (clock-pulse-vent c) cb))))
+  (add-listener! (clock-pulse-vent c) new-cb)
+  new-cb)
 
-(define (clock-every! c ppqn cb)
-  (define ppqns (modulo ppqn (clock-ppqn c)))
-  (define beats (floor (/ ppqn (clock-ppqn c))))
-  (define stopper (box #t))
-  (define (every-beat c t)
-    (cb c t)
-    (and (unbox stopper)
-         (clock-after! c beats ppqns every-beat)))
-  (clock-after! c beats ppqns every-beat)
-  stopper)
+(define (clock-after! c pulses cb)
+  (define beat (floor (/ pulses (clock-ppqn c))))
+  (define pulse (modulo pulses (clock-ppqn c)))
+  (define current-beat (clock-beat c))
+  (define current-pulse (clock-pulse c))
+  (clock-on! c (+ current-beat beat) (+ current-pulse pulse) cb))
+
+(define (clock-every! c pulses cb)
+  (define beat (floor (/ pulses (clock-ppqn c))))
+  (define pulse (modulo pulses (clock-ppqn c)))
+  (define previous-beat (clock-beat c))
+  (define previous-pulse (clock-pulse c))
+  (define (new-cb e)
+    (define current-pulses (+ (* (clock-beat c) (clock-ppqn c)) (clock-pulse c)))
+    (define previous-pulses (+ (* previous-beat (clock-ppqn c)) previous-pulse))
+    (define pulse-offset (+ (* beat (clock-ppqn c)) pulse))
+    (and (<= (+ previous-pulses pulse-offset) current-pulses)
+         (begin
+           (cb e)
+           (set! previous-beat (clock-beat c))
+           (set! previous-pulse (clock-pulse c)))))
+  (add-listener! (clock-pulse-vent c) new-cb)
+  new-cb)
 
 (define (clock-clear! c)
-  (set-clock-clearing?! c #t))
+  (clear-listeners! (clock-tick-vent c))
+  (clear-listeners! (clock-pulse-vent c)))

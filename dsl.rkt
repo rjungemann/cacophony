@@ -44,13 +44,14 @@
 ; Clear all listeners on route
 ; Clear all listeners
 ;
-; Make sure changing tempo etc. works reasonably
+; TODO: Make sure changing bpn works reasonably
+; TODO: Make sure changing ppqn works reasonably
 
 (define (immediately cb)
   (clock-at! (current-clock) (now) cb))
 
-(define (every ppqn cb)
-  (clock-every! (current-clock) ppqn cb))
+(define (every pulses cb)
+  (clock-every! (current-clock) pulses cb))
 
 (define (<< s route args)
   (osc-sender-send! s (osc-message route args)))
@@ -58,14 +59,14 @@
 (define (>> r route cb)
   (osc-receiver-add-listener! r route cb))
 
-(define (>* r route cb)
-  (osc-receiver-remove-listener! r route cb))
+#| (define (>* r route cb) |#
+#|   (osc-receiver-remove-listener! r route cb)) |#
 
-(define (bpm n)
-  (set-clock-bpm-ppqn! (current-clock) n (clock-ppqn (current-clock))))
+#| (define (bpm n) |#
+#|   (set-clock-bpm-ppqn! (current-clock) n (clock-ppqn (current-clock)))) |#
 
-(define (ppqn n)
-  (set-clock-bpm-ppqn! (current-clock) (clock-bpm (current-clock)) n))
+#| (define (ppqn n) |#
+#|   (set-clock-bpm-ppqn! (current-clock) (clock-bpm (current-clock)) n)) |#
 
 (define (beats->ppqn beats)
   (* (clock-ppqn (current-clock)) beats))
@@ -96,9 +97,31 @@
   (start)
   (define r (add-receiver 13699))
   (define s (add-sender "127.0.0.1" 13698))
-  (immediately (λ (c t) (printf "Now starting!\n")))
-  (every (+ (2n) (8n)) (λ (c t) (printf "Every 2.5 beats\n")))
-  (every (4n) (λ (c t) (printf "Every beat\n")))
+  (immediately (λ (e) (printf "Now starting!\n")))
+  (every (+ (2n) (8n)) (λ (e) (printf "Every 2.5 beats\n")))
+  (every (4n) (λ (e) (printf "Every beat\n")))
   (>> r #"/status" (λ (m) (printf "Received ~a\n" m)))
   (<< s #"/status" empty)
 |#
+
+#| (clock-set-bpm! c) |#
+#| (clock-set-ppqn! c) |#
+#| (clock-beat c) |#
+#| (clock-pulse c) |#
+#| (remove-listener! (clock-tick-vent c) cb) |#
+#| (remove-listener! (clock-pulse-vent c) cb) |#
+
+#| (define c (make-clock 120.0 24.0)) |#
+
+#| (add-listener! |#
+#|   (clock-pulse-vent c) |#
+#|   (λ (e) |#
+#|     (define c (clock-event-clock e)) |#
+#|     (printf "triggered! ~a ~a\n" (clock-beat c) (clock-pulse c)))) |#
+
+#| (clock-every! c 24 (λ (e) (printf "1\n"))) |#
+#| (clock-every! c 60 (λ (e) (printf "2.5\n"))) |#
+
+#| (clock-start! c) |#
+
+#| (sleep 4.0) |#
