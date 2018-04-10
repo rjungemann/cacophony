@@ -1,6 +1,6 @@
 #lang racket
 
-(require "cacophony/cacophony.rkt")
+(require "cacophony.rkt")
 
 (define (basic-prompt)
   (let ([in ((current-get-interaction-input-port))])
