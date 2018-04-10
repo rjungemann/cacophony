@@ -55,9 +55,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 108.0, 217.0, 81.0, 22.0 ],
+					"patching_rect" : [ 108.0, 217.0, 87.0, 22.0 ],
 					"style" : "",
-					"text" : "/send foo bar"
+					"text" : "/status foo bar"
 				}
 
 			}

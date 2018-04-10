@@ -39,6 +39,13 @@
                  [current-clock (make-clock 120.0 24.0)])
     (read-eval-print-loop)))
 
+; Stop clock
+; Clear clock
+; Clear all listeners on route
+; Clear all listeners
+;
+; Make sure changing tempo etc. works reasonably
+
 (define (immediately cb)
   (clock-at! (current-clock) (now) cb))
 
@@ -51,19 +58,47 @@
 (define (>> r route cb)
   (osc-receiver-add-listener! r route cb))
 
-(define (to-ppqn beats ppqns)
-  (* (clock-ppqn (current-clock)) ppqns))
+(define (>* r route cb)
+  (osc-receiver-remove-listener! r route cb))
 
-(define (4n)
-  (clock-ppqn (current-clock)))
+(define (bpm n)
+  (set-clock-bpm-ppqn! (current-clock) n (clock-ppqn (current-clock))))
+
+(define (ppqn n)
+  (set-clock-bpm-ppqn! (current-clock) (clock-bpm (current-clock)) n))
+
+(define (beats->ppqn beats)
+  (* (clock-ppqn (current-clock)) beats))
+
+(define (1nd) (beats->ppqn 6))
+(define (1n) (beats->ppqn 4))
+(define (1nt) (beats->ppqn (/ 8.0 3.0)))
+(define (2nd) (beats->ppqn 3))
+(define (2n) (beats->ppqn 2))
+(define (2nt) (beats->ppqn (/ 4.0 3.0)))
+(define (4nd) (beats->ppqn 1.5))
+(define (4n) (beats->ppqn 1))
+(define (4nt) (beats->ppqn (/ 2.0 3.0)))
+(define (8nd) (beats->ppqn 0.75))
+(define (8n) (beats->ppqn 0.5))
+(define (8nt) (beats->ppqn (/ 1.0 3.0)))
+(define (16nd) (beats->ppqn 0.375))
+(define (16n) (beats->ppqn 0.25))
+(define (16nt) (beats->ppqn (/ 1.0 6.0)))
+#| (define (32nd) (beats->ppqn 0.1875)) |#
+(define (32n) (beats->ppqn 0.125))
+(define (32nt) (beats->ppqn (/ 1.0 12.0)))
+#| (define (64nd) (beats->ppqn 0.09375)) |#
+#| (define (64n) (beats->ppqn 0.0625)) |#
+(define (64nt) (beats->ppqn (/ 1.0 24.0)))
 
 #|
   (start)
   (define r (add-receiver 13699))
   (define s (add-sender "127.0.0.1" 13698))
-  (immediately (λ (c t) (printf "Now!\n")))
-  (every 60.0 (λ (c t) (printf "Every 2.5 beats\n")))
+  (immediately (λ (c t) (printf "Now starting!\n")))
+  (every (+ (2n) (8n)) (λ (c t) (printf "Every 2.5 beats\n")))
   (every (4n) (λ (c t) (printf "Every beat\n")))
-  (>> r #"/status" (λ (m) (printf "!!! ~a\n" m)))
+  (>> r #"/status" (λ (m) (printf "Received ~a\n" m)))
   (<< s #"/status" empty)
 |#
