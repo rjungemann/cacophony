@@ -36,6 +36,7 @@
   (thread
     (λ ()
       (let loop ()
+        (define clock (current-clock))
         (tick)
         (and (unbox (current-stopper)) (loop))))))
 
@@ -83,6 +84,7 @@
 (define (set-bpm n)
   (set-clock-bpm! (current-clock) n))
 
+; NOTE: Broken for some reason.
 (define (set-ppqn n)
   (set-clock-ppqn! (current-clock) n))
 

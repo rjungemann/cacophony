@@ -59,6 +59,9 @@ Run the "Tester 2" Max project, then:
 ; Start the clock.
 (start)
 
+; Change the tempo.
+(set-bpm 140)
+
 ; Define a sender.
 (define s (add-sender "127.0.0.1" 13698))
 
@@ -86,7 +89,6 @@ TODO...
 
 ## TODO
 
-* Make sure changing bpn works reasonably
-* Make sure changing ppqn works reasonably
+* Changing ppqn has strange behavior
 * `remove-receiver`
 * `remove-sender`
