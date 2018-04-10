@@ -4,6 +4,8 @@ By Roger Jungemann
 
 A livecoding system in Racket. Juggle OSC connections and schedule events.
 
+Intended to be used with TSlime.vim.
+
 ## Setup
 
 ```sh
@@ -73,6 +75,10 @@ Run the "Tester 2" Max project, then:
   (<< s #"/bass" (list (bass-note)))
   (<< s #"/lead" (list (lead-note)))))
 ```
+
+## Livecoding
+
+TODO...
 
 ## API
 

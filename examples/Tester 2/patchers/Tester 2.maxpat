@@ -49,20 +49,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-41",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 487.0, 49.0, 29.5, 22.0 ],
-					"presentation_rect" : [ 487.0, 49.0, 0.0, 0.0 ],
-					"style" : "",
-					"text" : "48."
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-39",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
@@ -467,19 +453,6 @@
 					}
 ,
 					"varname" : "live.gain~[3]"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-37",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 422.0, 49.0, 29.5, 22.0 ],
-					"style" : "",
-					"text" : "24."
 				}
 
 			}
@@ -1214,13 +1187,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-35", 0 ],
-					"source" : [ "obj-37", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-40", 0 ],
 					"source" : [ "obj-39", 0 ]
 				}
@@ -1239,13 +1205,6 @@
 					"destination" : [ "obj-44", 0 ],
 					"order" : 1,
 					"source" : [ "obj-40", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-39", 0 ],
-					"source" : [ "obj-41", 0 ]
 				}
 
 			}
@@ -1287,14 +1246,14 @@
 ,
 		"dependency_cache" : [ 			{
 				"name" : "BASS1.aif",
-				"bootpath" : "~/Projects/rosc/Tester 2/media",
-				"patcherrelativepath" : "../media",
+				"bootpath" : "~/Documents/Music Stuff/Drum Kits/The Machine/Alesis HR-16/Kit 02",
+				"patcherrelativepath" : "../../../../../Documents/Music Stuff/Drum Kits/The Machine/Alesis HR-16/Kit 02",
 				"type" : "AIFF",
 				"implicit" : 1
 			}
 , 			{
 				"name" : "SNARE1.aif",
-				"bootpath" : "~/Projects/rosc/Tester 2/media",
+				"bootpath" : "~/Projects/rosc/examples/Tester 2/media",
 				"patcherrelativepath" : "../media",
 				"type" : "AIFF",
 				"implicit" : 1
