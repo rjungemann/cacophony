@@ -1,5 +1,7 @@
 #lang racket
 
+(require rx/event-emitter)
+
 (provide
   (struct-out clock)
   (struct-out clock-event)
@@ -18,10 +20,6 @@
   clock-after!
   clock-every!
   clock-clear!)
-
-(require rx/event-emitter)
-
-; TODO: Test bpm changes
 
 (struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent] #:mutable)
 (struct clock-event [clock t])

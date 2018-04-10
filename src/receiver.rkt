@@ -9,7 +9,11 @@
          make-osc-receiver
          osc-receiver-start!
          osc-receiver-tick!
-         osc-receiver-add-listener!)
+         osc-receiver-add-listener!
+         osc-receiver-remove-listener!
+         osc-receiver-router-remove-listener!
+         osc-receiver-router-remove-listeners!
+         osc-receiver-router-clear!)
 
 (struct osc-receiver (socket port buffer running? router)
   #:mutable)
@@ -38,3 +42,15 @@
 
 (define (osc-receiver-add-listener! r route cb)
   (router-add-listener! (osc-receiver-router r) route cb))
+
+(define (osc-receiver-remove-listener! r route cb)
+  (router-remove-listener! (osc-receiver-router r) route cb))
+
+(define (osc-receiver-router-remove-listener! r route cb)
+  (router-remove-listener! (osc-receiver-router r) route cb))
+
+(define (osc-receiver-router-remove-listeners! r route)
+  (router-remove-listeners! (osc-receiver-router r) route))
+
+(define (osc-receiver-router-clear! r)
+  (set-osc-receiver-router! (osc-receiver-router r) (make-router)))
