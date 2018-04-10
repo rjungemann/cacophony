@@ -89,7 +89,6 @@ TODO...
 
 ## TODO
 
-* Changing PPQN has strange behavior (changing BPM works well though)
 * TCP eval Server
 * Tests
 * Docs
