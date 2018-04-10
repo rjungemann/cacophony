@@ -6,7 +6,8 @@
 (provide
   (struct-out osc-sender)
   make-osc-sender
-  osc-sender-send!)
+  osc-sender-send!
+  osc-sender-stop!)
 
 (struct osc-sender (socket host port))
 
@@ -18,3 +19,6 @@
                (osc-sender-host sender)
                (osc-sender-port sender)
                (osc-element->bytes message)))
+
+(define (osc-sender-stop! sender)
+  (udp-close (osc-sender-socket sender)))

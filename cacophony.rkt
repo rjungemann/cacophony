@@ -1,16 +1,6 @@
 #lang racket
 
-(require racket/async-channel
-         osc
-         "receiver.rkt"
-         "sender.rkt"
-         "clock.rkt"
-         "router.rkt"
-         "logging.rkt"
-         "dsl.rkt")
-
-(define (stop! b)
-  (set-box! b #f))
+(require "cacophony/cacophony.rkt")
 
 (define (basic-prompt)
   (let ([in ((current-get-interaction-input-port))])
@@ -23,4 +13,7 @@
                  [current-namespace (namespace-anchor->namespace anc)]
                  [current-prompt-read basic-prompt])
     (logging-start! log-receiver)
+    (log-info "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
+    (log-info "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
+    (log-info "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
     (start-repl)))

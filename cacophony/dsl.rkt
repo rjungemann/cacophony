@@ -11,6 +11,9 @@
 (define current-receivers
   (make-parameter (box (list))))
 
+(define current-senders
+  (make-parameter (box (list))))
+
 (define current-clock
   (make-parameter #f))
 
@@ -23,8 +26,20 @@
   (set-box! (current-receivers) (append (unbox (current-receivers)) (list receiver)))
   receiver)
 
-(define (add-sender host port)
-  (make-osc-sender host port))
+(define (remove-receiver receiver)
+  (osc-receiver-stop! receiver)
+  (set-box! (current-receivers) (filter (λ (n) (equal? receiver n)) (unbox (current-receivers))))
+  (void))
+
+(define (add-sender port)
+  (define sender (make-osc-sender port))
+  (set-box! (current-senders) (append (unbox (current-senders)) (list sender)))
+  sender)
+
+(define (remove-sender sender)
+  (osc-sender-stop! sender)
+  (set-box! (current-senders) (filter (λ (n) (equal? sender n)) (unbox (current-senders))))
+  (void))
 
 (define (start)
   (define (tick)
@@ -38,19 +53,24 @@
       (let loop ()
         (define clock (current-clock))
         (tick)
-        (and (unbox (current-stopper)) (loop))))))
+        (and (unbox (current-stopper)) (loop)))))
+  (void))
 
 (define (stop)
-  (set-box! (current-stopper) #f))
+  (set-box! (current-stopper) #f)
+  (void))
 
 (define (clear)
-  (clock-clear! (current-clock)))
+  (clock-clear! (current-clock))
+  (void))
 
 (define (remove-tick-listener cb)
-  (remove-listener! (clock-tick-vent (current-clock)) cb))
+  (remove-listener! (clock-tick-vent (current-clock)) cb)
+  (void))
 
 (define (remove-pulse-listener cb)
-  (remove-listener! (clock-pulse-vent (current-clock)) cb))
+  (remove-listener! (clock-pulse-vent (current-clock)) cb)
+  (void))
 
 (define (start-repl)
   (parameterize ([current-receivers (box (list))]
@@ -64,7 +84,8 @@
   (clock-every! (current-clock) pulses cb))
 
 (define (<< s route args)
-  (osc-sender-send! s (osc-message route args)))
+  (osc-sender-send! s (osc-message route args))
+  (void))
 
 (define (>> r route cb)
   (osc-receiver-add-listener! r route cb))
@@ -73,20 +94,25 @@
   (osc-receiver-remove-listener! r route cb))
 
 (define (router-remove-listener r route cb)
-  (osc-receiver-router-remove-listener! r route cb))
+  (osc-receiver-router-remove-listener! r route cb)
+  (void))
 
 (define (router-remove-listeners r route)
-  (osc-receiver-router-remove-listener! r route))
+  (osc-receiver-router-remove-listener! r route)
+  (void))
 
 (define (router-clear r)
-  (osc-receiver-router-clear! r))
+  (osc-receiver-router-clear! r)
+  (void))
 
 (define (set-bpm n)
-  (set-clock-bpm! (current-clock) n))
+  (set-clock-bpm! (current-clock) n)
+  (void))
 
 ; NOTE: Broken for some reason.
 (define (set-ppqn n)
-  (set-clock-ppqn! (current-clock) n))
+  (set-clock-ppqn! (current-clock) n)
+  (void))
 
 (define (beats)
   (clock-beat (current-clock)))
@@ -118,6 +144,28 @@
 (define (64nd) (beats->ppqn 0.09375)) ; NOTE: Can't be used at 24 ppqn!
 (define (64n) (beats->ppqn 0.0625)) ; NOTE: Can't be used at 24 ppqn!
 (define (64nt) (beats->ppqn (/ 1.0 24.0)))
+
+(define (p . args)
+  (log-info (apply format args)))
+
+(define (status)
+  (define receivers (unbox (current-receivers)))
+  (define senders (unbox (current-senders)))
+  (p "Receivers:")
+  (for ([r receivers])
+    (p "  - :~a" (osc-receiver-port r))
+    (for ([(route listeners) (osc-receiver-router r)])
+      (p "    - ~a (~a listeners)" route (length listeners))))
+  (and (empty? receivers)
+       (p "  - No receivers"))
+  (p "Senders:")
+  (for ([s senders])
+    (p "    - ~a:~a" (osc-sender-host s) (osc-sender-port s)))
+  (and (empty? senders)
+       (p "  - No senders"))
+  (p "Running? ~a" (unbox (current-stopper)))
+  (p "BPM ~a" (clock-bpm (current-clock)))
+  (p "PPQN ~a" (clock-ppqn (current-clock))))
 
 ; -------
 ; Helpers

@@ -9,23 +9,23 @@
          make-osc-receiver
          osc-receiver-start!
          osc-receiver-tick!
+         osc-receiver-stop!
          osc-receiver-add-listener!
          osc-receiver-remove-listener!
          osc-receiver-router-remove-listener!
          osc-receiver-router-remove-listeners!
          osc-receiver-router-clear!)
 
-(struct osc-receiver (socket port buffer running? router)
+(struct osc-receiver (socket port buffer router)
   #:mutable)
 
 (define (make-osc-receiver port)
-  (osc-receiver (udp-open-socket) port (make-bytes 10000 0) #f (make-router)))
+  (osc-receiver (udp-open-socket) port (make-bytes 10000 0) (make-router)))
 
 (define (osc-receiver-start! r)
   (let ([socket (osc-receiver-socket r)]
         [port (osc-receiver-port r)])
-    (udp-bind! socket "127.0.0.1" port)
-    (set-osc-receiver-running?! r #t)))
+    (udp-bind! socket "127.0.0.1" port)))
 
 (define (osc-receiver-tick! r)
   (let*-values ([(socket) (osc-receiver-socket r)]
@@ -39,6 +39,9 @@
                             (osc-message-address message)
                             (append (list (osc-message-address message))
                                     (osc-message-args message)))))))
+
+(define (osc-receiver-stop! r)
+  (udp-close (osc-receiver-socket r)))
 
 (define (osc-receiver-add-listener! r route cb)
   (router-add-listener! (osc-receiver-router r) route cb))
