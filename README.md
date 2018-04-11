@@ -13,6 +13,8 @@ Intended to be used with TSlime.vim.
 brew install minimal-racket
 
 # Install dependencies.
+raco setup
+# Or...
 yes | raco pkg install --skip-installed rx osc scribble
 
 # Try running.
@@ -21,14 +23,13 @@ racket cacophony.rkt
 # Hit ctrl-d to quit.
 
 # Try building.
-mkdir -p build
-raco exe -o build/cacophony cacophony/exe.rkt
+raco exe -o cacophony main.rkt
 
 # Then try running that.
 ./cacophony
 
 # Build docs.
-raco setup
+raco pkg install
 ```
 
 ## Example

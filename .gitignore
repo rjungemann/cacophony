@@ -1,5 +1,4 @@
 .DS_Store
-src/doc
-build
-cacophony/doc
-cacophony/compiledd
+doc
+compiled
+cacophony
