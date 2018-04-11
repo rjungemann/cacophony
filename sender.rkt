@@ -4,21 +4,21 @@
          osc)
 
 (provide
-  (struct-out osc-sender)
-  make-osc-sender
-  osc-sender-send!
-  osc-sender-stop!)
+  (struct-out sender)
+  make-sender
+  sender-send!
+  sender-stop!)
 
-(struct osc-sender (socket host port))
+(struct sender (socket host port))
 
-(define (make-osc-sender host port)
-  (osc-sender (udp-open-socket) host port))
+(define (make-sender host port)
+  (sender (udp-open-socket) host port))
 
-(define (osc-sender-send! sender message)
-  (udp-send-to (osc-sender-socket sender)
-               (osc-sender-host sender)
-               (osc-sender-port sender)
+(define (sender-send! sender message)
+  (udp-send-to (sender-socket sender)
+               (sender-host sender)
+               (sender-port sender)
                (osc-element->bytes message)))
 
-(define (osc-sender-stop! sender)
-  (udp-close (osc-sender-socket sender)))
+(define (sender-stop! sender)
+  (udp-close (sender-socket sender)))

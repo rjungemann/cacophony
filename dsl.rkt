@@ -21,23 +21,23 @@
   (make-parameter (box #f)))
 
 (define (add-receiver port)
-  (define receiver (make-osc-receiver port))
-  (osc-receiver-start! receiver)
+  (define receiver (make-receiver port))
+  (receiver-start! receiver)
   (set-box! (current-receivers) (append (unbox (current-receivers)) (list receiver)))
   receiver)
 
 (define (remove-receiver receiver)
-  (osc-receiver-stop! receiver)
+  (receiver-stop! receiver)
   (set-box! (current-receivers) (filter (λ (n) (equal? receiver n)) (unbox (current-receivers))))
   (void))
 
 (define (add-sender port)
-  (define sender (make-osc-sender port))
+  (define sender (make-sender port))
   (set-box! (current-senders) (append (unbox (current-senders)) (list sender)))
   sender)
 
 (define (remove-sender sender)
-  (osc-sender-stop! sender)
+  (sender-stop! sender)
   (set-box! (current-senders) (filter (λ (n) (equal? sender n)) (unbox (current-senders))))
   (void))
 
@@ -45,7 +45,7 @@
   (define (tick)
     (clock-tick! (current-clock))
     (for ([receiver (unbox (current-receivers))])
-      (osc-receiver-tick! receiver)))
+      (receiver-tick! receiver)))
   (set-box! (current-stopper) #t)
   (clock-start! (current-clock))
   (thread
@@ -87,25 +87,25 @@
   (clock-every! (current-clock) beats cb))
 
 (define (<< s route . args)
-  (osc-sender-send! s (osc-message route args))
+  (sender-send! s (osc-message route args))
   (void))
 
 (define (>> r route cb)
-  (osc-receiver-add-listener! r route cb))
+  (receiver-add-listener! r route cb))
 
 (define (>* r route cb)
-  (osc-receiver-remove-listener! r route cb))
+  (receiver-remove-listener! r route cb))
 
 (define (router-remove-listener r route cb)
-  (osc-receiver-router-remove-listener! r route cb)
+  (receiver-router-remove-listener! r route cb)
   (void))
 
 (define (router-remove-listeners r route)
-  (osc-receiver-router-remove-listener! r route)
+  (receiver-router-remove-listener! r route)
   (void))
 
 (define (router-clear r)
-  (osc-receiver-router-clear! r)
+  (receiver-router-clear! r)
   (void))
 
 (define (set-bpm n)
@@ -156,14 +156,14 @@
   (define senders (unbox (current-senders)))
   (p "Receivers:")
   (for ([r receivers])
-    (p "  - :~a" (osc-receiver-port r))
-    (for ([(route listeners) (osc-receiver-router r)])
+    (p "  - :~a" (receiver-port r))
+    (for ([(route listeners) (receiver-router r)])
       (p "    - ~a (~a listeners)" route (length listeners))))
   (and (empty? receivers)
        (p "  - No receivers"))
   (p "Senders:")
   (for ([s senders])
-    (p "    - ~a:~a" (osc-sender-host s) (osc-sender-port s)))
+    (p "    - ~a:~a" (sender-host s) (sender-port s)))
   (and (empty? senders)
        (p "  - No senders"))
   (p "Running? ~a" (unbox (current-stopper)))

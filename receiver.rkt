@@ -5,55 +5,55 @@
          osc
          "router.rkt")
 
-(provide (struct-out osc-receiver)
-         make-osc-receiver
-         osc-receiver-start!
-         osc-receiver-tick!
-         osc-receiver-stop!
-         osc-receiver-add-listener!
-         osc-receiver-remove-listener!
-         osc-receiver-router-remove-listener!
-         osc-receiver-router-remove-listeners!
-         osc-receiver-router-clear!)
+(provide (struct-out receiver)
+         make-receiver
+         receiver-start!
+         receiver-tick!
+         receiver-stop!
+         receiver-add-listener!
+         receiver-remove-listener!
+         receiver-router-remove-listener!
+         receiver-router-remove-listeners!
+         receiver-router-clear!)
 
-(struct osc-receiver (socket port buffer router)
+(struct receiver (socket port buffer router)
   #:mutable)
 
-(define (make-osc-receiver port)
-  (osc-receiver (udp-open-socket) port (make-bytes 10000 0) (make-router)))
+(define (make-receiver port)
+  (receiver (udp-open-socket) port (make-bytes 10000 0) (make-router)))
 
-(define (osc-receiver-start! r)
-  (let ([socket (osc-receiver-socket r)]
-        [port (osc-receiver-port r)])
+(define (receiver-start! r)
+  (let ([socket (receiver-socket r)]
+        [port (receiver-port r)])
     (udp-bind! socket "127.0.0.1" port)))
 
-(define (osc-receiver-tick! r)
-  (let*-values ([(socket) (osc-receiver-socket r)]
-                [(port) (osc-receiver-port r)]
-                [(buffer) (osc-receiver-buffer r)]
+(define (receiver-tick! r)
+  (let*-values ([(socket) (receiver-socket r)]
+                [(port) (receiver-port r)]
+                [(buffer) (receiver-buffer r)]
                 [(len hostname src-port) (udp-receive!* socket buffer)])
     (and len
          (let ([message (bytes->osc-element (subbytes buffer 0 len))]
-               [router (osc-receiver-router r)])
+               [router (receiver-router r)])
            (router-trigger! router
                             (osc-message-address message)
                             (append (list (osc-message-address message))
                                     (osc-message-args message)))))))
 
-(define (osc-receiver-stop! r)
-  (udp-close (osc-receiver-socket r)))
+(define (receiver-stop! r)
+  (udp-close (receiver-socket r)))
 
-(define (osc-receiver-add-listener! r route cb)
-  (router-add-listener! (osc-receiver-router r) route cb))
+(define (receiver-add-listener! r route cb)
+  (router-add-listener! (receiver-router r) route cb))
 
-(define (osc-receiver-remove-listener! r route cb)
-  (router-remove-listener! (osc-receiver-router r) route cb))
+(define (receiver-remove-listener! r route cb)
+  (router-remove-listener! (receiver-router r) route cb))
 
-(define (osc-receiver-router-remove-listener! r route cb)
-  (router-remove-listener! (osc-receiver-router r) route cb))
+(define (receiver-router-remove-listener! r route cb)
+  (router-remove-listener! (receiver-router r) route cb))
 
-(define (osc-receiver-router-remove-listeners! r route)
-  (router-remove-listeners! (osc-receiver-router r) route))
+(define (receiver-router-remove-listeners! r route)
+  (router-remove-listeners! (receiver-router r) route))
 
-(define (osc-receiver-router-clear! r)
-  (set-osc-receiver-router! (osc-receiver-router r) (make-router)))
+(define (receiver-router-clear! r)
+  (set-receiver-router! (receiver-router r) (make-router)))
