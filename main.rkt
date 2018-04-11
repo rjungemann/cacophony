@@ -36,14 +36,5 @@
 
 (module+ main
   ;; Main entry point, executed when run with the `racket` executable or DrRacket.
-  (define (basic-prompt)
-    (let ([in ((current-get-interaction-input-port))])
-      ((current-read-interaction) (object-name in) in)))
-
   (define-namespace-anchor anc)
-  (parameterize ([current-namespace (namespace-anchor->namespace anc)]
-                 [current-prompt-read basic-prompt])
-    (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
-    (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
-    (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
-    (start-repl)))
+  (start-repl anc))

@@ -72,9 +72,16 @@
   (remove-listener! (clock-pulse-vent (current-clock)) cb)
   (void))
 
-(define (start-repl)
-  (parameterize ([current-receivers (box (list))]
+(define (start-repl anc)
+  (parameterize ([current-namespace (namespace-anchor->namespace anc)]
+                 [current-prompt-read (λ ()
+                                        (let ([in ((current-get-interaction-input-port))])
+                                          ((current-read-interaction) (object-name in) in)))]
+                 [current-receivers (box (list))]
                  [current-clock (make-clock 120.0 24.0)])
+    (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
+    (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
+    (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
     (read-eval-print-loop)))
 
 (define (defer cb)
