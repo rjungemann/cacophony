@@ -26,17 +26,9 @@
 
 (require racket/async-channel
          osc
-         "receiver.rkt"
-         "sender.rkt"
-         "clock.rkt"
-         "router.rkt"
          "dsl.rkt")
 
-(provide (all-from-out "receiver.rkt"
-                       "sender.rkt"
-                       "clock.rkt"
-                       "router.rkt"
-                       "dsl.rkt"))
+(provide (all-from-out "dsl.rkt"))
 
 (module+ test
   ;; Tests to be run with raco test
