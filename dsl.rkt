@@ -4,7 +4,8 @@
          rx/event-emitter
          "clock.rkt"
          "receiver.rkt"
-         "sender.rkt")
+         "sender.rkt"
+         "socket.rkt")
 
 (provide (all-defined-out))
 
@@ -19,6 +20,15 @@
 
 (define current-stopper
   (make-parameter (box #f)))
+
+(define current-ich
+  (make-parameter (make-channel)))
+
+(define current-och
+  (make-parameter (make-channel)))
+
+(define socket-port
+  (make-parameter 1234))
 
 (define (add-receiver port)
   (define receiver (make-receiver port))
@@ -44,6 +54,7 @@
 (define (start)
   (define (tick)
     (clock-tick! (current-clock))
+    (socket-eval! (current-ich) (current-och))
     (for ([receiver (unbox (current-receivers))])
       (receiver-tick! receiver)))
   (set-box! (current-stopper) #t)
@@ -84,6 +95,13 @@
                                           ((current-read-interaction) (object-name in) in)))]
                  [current-receivers (box (list))]
                  [current-clock (make-clock 120.0 24.0)])
+    (let ([ich (current-ich)]
+          [och (current-och)]
+          [port (socket-port)])
+      (thread
+        (lambda ()
+          (socket-start! port ich och))))
+
     (splash)
     (read-eval-print-loop)))
 
