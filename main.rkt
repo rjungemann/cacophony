@@ -30,14 +30,12 @@
          "sender.rkt"
          "clock.rkt"
          "router.rkt"
-         "logging.rkt"
          "dsl.rkt")
 
 (provide (all-from-out "receiver.rkt"
                        "sender.rkt"
                        "clock.rkt"
                        "router.rkt"
-                       "logging.rkt"
                        "dsl.rkt"))
 
 (module+ test
@@ -51,13 +49,9 @@
       ((current-read-interaction) (object-name in) in)))
 
   (define-namespace-anchor anc)
-  (let* ([logger (make-logger 'rosc)]
-         [log-receiver (make-log-receiver logger 'info)])
-    (parameterize ([current-logger logger]
-                   [current-namespace (namespace-anchor->namespace anc)]
-                   [current-prompt-read basic-prompt])
-      (logging-start! log-receiver)
-      (log-info "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
-      (log-info "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
-      (log-info "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
-      (start-repl))))
+  (parameterize ([current-namespace (namespace-anchor->namespace anc)]
+                 [current-prompt-read basic-prompt])
+    (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
+    (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
+    (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
+    (start-repl)))

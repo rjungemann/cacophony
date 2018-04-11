@@ -148,8 +148,10 @@
 (define (64n) 0.0625) ; NOTE: Can't be used at 24 ppqn!
 (define (64nt) (/ 1.0 24.0))
 
+(define (cyan s) (string-append "\u001b[36m" s "\u001b[0m"))
+
 (define (p . args)
-  (log-info (apply format args)))
+  (displayln (cyan (apply format args))))
 
 (define (status)
   (define receivers (unbox (current-receivers)))
