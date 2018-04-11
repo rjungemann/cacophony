@@ -55,7 +55,7 @@ Run the "Tester" Max project, then:
 (>> r #"/status" (λ (m) (printf "Received ~a\n" m)))
 
 ; Send out a message. The above code should receive a response.
-(<< s #"/status" empty)
+(<< s #"/status")
 ```
 
 Run the "Tester 2" Max project, then:
@@ -84,6 +84,15 @@ Run the "Tester 2" Max project, then:
   (<< s #"/lead" (lead))))
 ```
 
+Dynamically scaling BPM with linear interpolation.
+
+```racket
+(define l (lerper 120 60 0.1))
+(every (4n) (λ (e)
+  (p "Tick!")
+  (set-bpm (l))))
+```
+
 ## Livecoding
 
 TODO...
@@ -97,3 +106,6 @@ TODO...
 * TCP eval Server
 * Tests
 * Docs
+* L-Tree
+* Markov chain
+* Euclidian sequencer

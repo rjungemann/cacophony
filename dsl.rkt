@@ -31,8 +31,8 @@
   (set-box! (current-receivers) (filter (λ (n) (equal? receiver n)) (unbox (current-receivers))))
   (void))
 
-(define (add-sender port)
-  (define sender (make-sender port))
+(define (add-sender host port)
+  (define sender (make-sender host port))
   (set-box! (current-senders) (append (unbox (current-senders)) (list sender)))
   sender)
 
@@ -72,6 +72,11 @@
   (remove-listener! (clock-pulse-vent (current-clock)) cb)
   (void))
 
+(define (splash)
+  (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
+  (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
+  (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           "))
+
 (define (start-repl anc)
   (parameterize ([current-namespace (namespace-anchor->namespace anc)]
                  [current-prompt-read (λ ()
@@ -79,9 +84,7 @@
                                           ((current-read-interaction) (object-name in) in)))]
                  [current-receivers (box (list))]
                  [current-clock (make-clock 120.0 24.0)])
-    (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
-    (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
-    (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           ")
+    (splash)
     (read-eval-print-loop)))
 
 (define (defer cb)
@@ -119,7 +122,6 @@
   (set-clock-bpm! (current-clock) n)
   (void))
 
-; NOTE: Broken for some reason.
 (define (set-ppqn n)
   (set-clock-ppqn! (current-clock) n)
   (void))
@@ -188,4 +190,16 @@
   (λ ()
     (define v (list-ref l (modulo n (length l))))
     (set! n (+ n 1))
+    v))
+
+(define (lerp v w t)
+  (cond [(< t 0.0) v]
+        [(> t 1.0) w]
+        [else (+ (* (- 1 t) v) (* t w))]))
+
+(define (lerper v w incr)
+  (define t 0)
+  (λ ()
+    (define v (lerp v w t))
+    (set! t (+ incr t))
     v))
