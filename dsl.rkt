@@ -231,18 +231,31 @@
 (define (status)
   (define receivers (unbox (current-receivers)))
   (define senders (unbox (current-senders)))
-  (p "Receivers:")
+  (p "─────────")
+  (p "Receivers")
+  (p "─────────")
   (for ([r receivers])
-    (p "  - :~a" (receiver-port r))
-    (for ([(route listeners) (receiver-router r)])
-      (p "    - ~a (~a listeners)" route (length listeners))))
+    (p ":~a" (receiver-port r))
+    (define router (receiver-router r))
+    (for ([(route listeners) router]
+          [i (in-naturals)])
+      (if (= (+ 1 i) (hash-count router))
+        (p "  └ ~a (~a listeners)" route (length listeners))
+        (p "  ├ ~a (~a listeners)" route (length listeners)))))
   (and (empty? receivers)
-       (p "  - No receivers"))
-  (p "Senders:")
+       (p "No receivers!"))
+  (printf "\n")
+  (p "───────")
+  (p "Senders")
+  (p "───────")
   (for ([s senders])
-    (p "    - ~a:~a" (sender-host s) (sender-port s)))
+    (p "~a:~a" (sender-host s) (sender-port s)))
   (and (empty? senders)
-       (p "  - No senders"))
+     (p "No senders"))
+  (printf "\n")
+  (p "─────")
+  (p "Stats")
+  (p "─────")
   (p "Socket port ~a" (socket-port))
   (p "Running? ~a" (unbox (current-stopper)))
   (p "BPM ~a" (clock-bpm (current-clock)))
@@ -250,6 +263,25 @@
 
 (define (memory)
   (dump-memory-stats))
+
+(define stats-vector (make-vector 12))
+(define stats-names (list 'current-process-milliseconds
+                          'current-milliseconds
+                          'current-gc-milliseconds
+                          'gc-count
+                          'thread-context-switches
+                          'internal-stack-overflows
+                          'threads-scheduled
+                          'syntax-objects-read
+                          'hash-tables-searched
+                          'additional-hash-slots-searched
+                          'bytes-allocated-not-reported
+                          'peak-allocated-bytes))
+(define (stats)
+  (vector-set-performance-stats! stats-vector)
+  (for ([n stats-names]
+        [o stats-vector])
+    (p "~a ~a" n o)))
 
 ; -------
 ; Helpers
