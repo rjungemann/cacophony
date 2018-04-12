@@ -2,6 +2,7 @@
 
 (require osc
          rx/event-emitter
+         unix-signals
          "clock.rkt"
          "receiver.rkt"
          "sender.rkt"
@@ -51,24 +52,64 @@
   (set-box! (current-senders) (filter (λ (n) (equal? sender n)) (unbox (current-senders))))
   (void))
 
+(define (prepare)
+  (define ich (current-ich))
+  (define och (current-och))
+  (define receivers (current-receivers))
+  (define namespace (current-namespace))
+  (define prompt-read (current-prompt-read))
+
+  ; Start the socket server.
+  (let ([ich (current-ich)]
+        [och (current-och)]
+        [port (socket-port)])
+    (thread
+      (lambda ()
+        (socket-start! port ich och))))
+
+  ; Check for SIGINT and exit.
+  (capture-signal! 'SIGINT)
+  (thread
+    (λ ()
+      (let ([signum (read-signal)])
+        (printf "~a ~a\n" signum (lookup-signal-name signum))
+        (and (equal? 'SIGINT (lookup-signal-name signum))
+             (exit 130)))))
+
+  (thread
+    (λ ()
+      (let loop ([n 0])
+        ; Tell GC to run in incremental mode (must be called sometime after
+        ; every major collection).
+        (and (= 0 (modulo n 2000000))
+             (collect-garbage 'incremental))
+        ; Receiver messages.
+        (for ([receiver (unbox receivers)])
+          (receiver-tick! receiver))
+        ; Socket eval.
+        (parameterize ([current-namespace namespace]
+                       [current-prompt-read prompt-read])
+          (socket-eval! ich och))
+        (loop (+ n 1)))))
+
+  (void))
+
 (define (start)
-  (define (tick)
-    (clock-tick! (current-clock))
-    (socket-eval! (current-ich) (current-och))
-    (for ([receiver (unbox (current-receivers))])
-      (receiver-tick! receiver)))
-  (set-box! (current-stopper) #t)
-  (clock-start! (current-clock))
+  (define clock (current-clock))
+  (define stopper (current-stopper))
+
+  (set-box! stopper #t)
+  (clock-start! clock)
   (thread
     (λ ()
       (let loop ()
-        (define clock (current-clock))
-        (tick)
-        (and (unbox (current-stopper)) (loop)))))
+        (clock-tick! clock)
+        (and (unbox stopper) (loop)))))
   (void))
 
 (define (stop)
   (set-box! (current-stopper) #f)
+  (collect-garbage 'major)
   (void))
 
 (define (clear)
@@ -95,14 +136,9 @@
                                           ((current-read-interaction) (object-name in) in)))]
                  [current-receivers (box (list))]
                  [current-clock (make-clock 120.0 24.0)])
-    (let ([ich (current-ich)]
-          [och (current-och)]
-          [port (socket-port)])
-      (thread
-        (lambda ()
-          (socket-start! port ich och))))
-
     (splash)
+    (prepare)
+    (collect-garbage 'major)
     (read-eval-print-loop)))
 
 (define (defer cb)

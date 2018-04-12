@@ -45,14 +45,14 @@ Run the "Tester" Max project, then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule an event to be run next tick.
-(defer (λ (e) (printf "Now starting!\n")))
+(defer (λ (e) (p "Now starting!n")))
 
 ; Schedule some events to be run every 2.5 beats and every beat.
-(every (+ (2n) (8n)) (λ (e) (printf "Every 2.5 beats\n")))
-(every (4n) (λ (e) (printf "Every beat\n")))
+(every (+ (2n) (8n)) (λ (e) (p "Every 2.5 beats")))
+(every (4n) (λ (e) (p "Every beat\n")))
 
 ; Wait for a response.
-(>> r #"/status" (λ (m) (printf "Received ~a\n" m)))
+(>> r #"/status" (λ (m) (p "Received ~a" m)))
 
 ; Send out a message. The above code should receive a response.
 (<< s #"/status")
