@@ -124,10 +124,19 @@
   (remove-listener! (clock-pulse-vent (current-clock)) cb)
   (void))
 
+(define (help)
+  (p "TODO"))
+
 (define (splash)
-  (p "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  Scheme + TSlime.vim")
-  (p "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  Livecoding         ")
-  (p "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  Platform           "))
+  (displayln (string-append (yellow "┌  ┌─┐┌─┐┌─┐┌─┐┌─┐┬ ┬┌─┐┌┐┌┬ ┬  ┐  ") (magenta "Scheme + TSlime.vim")))
+  (displayln (string-append (yellow "│  │  ├─┤│  │ │├─┘├─┤│ ││││└┬┘  │  ") (magenta "Livecoding         ")))
+  (displayln (string-append (yellow "└  └─┘┴ ┴└─┘└─┘┴  ┴ ┴└─┘┘└┘ ┴   ┘  ") (magenta "Platform           ")))
+  (printf "\n")
+  (p "Socket server running on port ~a." (socket-port))
+  (printf "\n")
+  (p "Type in commands to get started. Common commands:")
+  (p "(help) (status) (start) (stop)")
+  (printf "\n"))
 
 (define (start-repl anc)
   (parameterize ([current-namespace (namespace-anchor->namespace anc)]
@@ -212,6 +221,9 @@
 (define (64nt) (/ 1.0 24.0))
 
 (define (cyan s) (string-append "\u001b[36m" s "\u001b[0m"))
+(define (blue s) (string-append "\u001b[34m" s "\u001b[0m"))
+(define (yellow s) (string-append "\u001b[33m" s "\u001b[0m"))
+(define (magenta s) (string-append "\u001b[35m" s "\u001b[0m"))
 
 (define (p . args)
   (displayln (cyan (apply format args))))
@@ -231,9 +243,13 @@
     (p "    - ~a:~a" (sender-host s) (sender-port s)))
   (and (empty? senders)
        (p "  - No senders"))
+  (p "Socket port ~a" (socket-port))
   (p "Running? ~a" (unbox (current-stopper)))
   (p "BPM ~a" (clock-bpm (current-clock)))
   (p "PPQN ~a" (clock-ppqn (current-clock))))
+
+(define (memory)
+  (dump-memory-stats))
 
 ; -------
 ; Helpers
