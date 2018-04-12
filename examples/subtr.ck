@@ -1,0 +1,45 @@
+public class Subtr {
+  SndBuf shape;
+  Gain oscgain;
+  ADSR ampenv;
+  ADSR filterenv;
+  LPF lpf;
+
+  shape => oscgain => lpf =>ampenv;
+
+  // TODO: Allow to only be called once.
+  public void setup(string path) {
+    path => shape.read;
+    spork ~ envdrive();
+  }
+
+  public void connect(UGen ugen) {
+    ampenv => ugen;
+  }
+
+  public void keyOn() {
+    ampenv.keyOn();
+  }
+
+  public void keyOff() {
+    ampenv.keyOff();
+  }
+
+  fun void envdrive () {
+    while (true) {
+      filterenv.last() * 1500.0 + 200.0 => lpf.freq;
+      5::ms => now;
+    }
+  }
+}
+
+Subtr s;
+s.setup(me.dir() + "AKWF_0001.wav");
+36.0 => Std.mtof => s.shape.freq;
+0.5 => s.oscgain.gain;
+s.ampenv.set(1::ms, 350::ms, 0.2, 500::ms);
+s.filterenv.set(15::ms, 550::ms, 0.2, 400::ms);
+s.keyOn();
+100::ms => now;
+s.keyOff();
+1000::ms => now;
