@@ -5,7 +5,8 @@ public class Subtr {
   ADSR filterenv;
   LPF lpf;
 
-  shape => oscgain => lpf =>ampenv;
+  1 => shape.loop;
+  shape => oscgain => lpf => ampenv;
 
   // TODO: Allow to only be called once.
   public void setup(string path) {
@@ -19,10 +20,12 @@ public class Subtr {
 
   public void keyOn() {
     ampenv.keyOn();
+    filterenv.keyOn();
   }
 
   public void keyOff() {
     ampenv.keyOff();
+    filterenv.keyOff();
   }
 
   fun void envdrive () {
@@ -35,6 +38,7 @@ public class Subtr {
 
 Subtr s;
 s.setup(me.dir() + "AKWF_0001.wav");
+s.connect(dac);
 36.0 => Std.mtof => s.shape.freq;
 0.5 => s.oscgain.gain;
 s.ampenv.set(1::ms, 350::ms, 0.2, 500::ms);

@@ -1,6 +1,8 @@
 // Load buffer
 me.dir() + "SNARE1.aif" => string filename;
-SndBuf buf => dac;
+SndBuf buf;
+filename => buf.read;
+buf => dac;
 0 => buf.loop;
 0 => buf.rate;
 

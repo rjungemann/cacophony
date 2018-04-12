@@ -261,9 +261,6 @@
   (p "BPM ~a" (clock-bpm (current-clock)))
   (p "PPQN ~a" (clock-ppqn (current-clock))))
 
-(define (memory)
-  (dump-memory-stats))
-
 (define stats-vector (make-vector 12))
 (define stats-names (list 'current-process-milliseconds
                           'current-milliseconds
@@ -277,11 +274,12 @@
                           'additional-hash-slots-searched
                           'bytes-allocated-not-reported
                           'peak-allocated-bytes))
-(define (stats)
+(define (memory)
+  (dump-memory-stats)
   (vector-set-performance-stats! stats-vector)
   (for ([n stats-names]
         [o stats-vector])
-    (p "~a ~a" n o)))
+    (printf "~a: ~a\n" n o)))
 
 ; -------
 ; Helpers
