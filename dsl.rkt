@@ -285,7 +285,7 @@
 ; Helpers
 ; -------
 
-(define (rotate l)
+(define (rotator l)
   (define n 0)
   (λ ()
     (define v (list-ref l (modulo n (length l))))
@@ -303,3 +303,8 @@
     (define v (lerp v w t))
     (set! t (+ incr t))
     v))
+
+(define (l-system current rules n)
+  (for/fold ([accum current])
+            ([i (in-range 0 n)])
+    (flatten (map rules accum))))

@@ -45,11 +45,11 @@ Run the "Tester" Max project, then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule an event to be run next tick.
-(defer (λ (e) (p "Now starting!n")))
+(defer (λ (_) (p "Now starting!n")))
 
 ; Schedule some events to be run every 2.5 beats and every beat.
-(every (+ (2n) (8n)) (λ (e) (p "Every 2.5 beats")))
-(every (4n) (λ (e) (p "Every beat\n")))
+(every (+ (2n) (8n)) (λ (_) (p "Every 2.5 beats")))
+(every (4n) (λ (_) (p "Every beat\n")))
 
 ; Wait for a response.
 (>> r #"/status" (λ (m) (p "Received ~a" m)))
@@ -71,26 +71,60 @@ Run the "Tester 2" Max project, then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule the drums.
-(define snare? (rotate (list #f #t)))
-(every (4n) (λ (e)
-  (<< s #"/bass-drum")
-  (and (snare?) (<< s #"/snare-drum")) ))
+(define snare? (rotator (list #f #t)))
+(every (4n)
+  (λ (_)
+    (<< s #"/bass-drum")
+    (and (snare?) (<< s #"/snare-drum")) ))
 
 ; Schedule the bass and lead.
-(define bass (rotate '(24 24 27 24 34 36 22)))
-(define lead (rotate '(48 50 51 48 50 46 53)))
-(every (8n) (λ (e)
-  (<< s #"/bass" (bass))
-  (<< s #"/lead" (lead))))
+(define bass (rotator '(24 24 27 24 34 36 22)))
+(define lead (rotator '(48 50 51 48 50 46 53)))
+(every (8n)
+  (λ (_)
+    (<< s #"/bass" (bass))
+    (<< s #"/lead" (lead))))
 ```
 
 Dynamically scaling BPM with linear interpolation.
 
 ```racket
 (define l (lerper 120 60 0.1))
-(every (4n) (λ (e)
-  (p "Tick!")
-  (set-bpm (l))))
+
+(every (4n)
+  (λ (_)
+    (p "Tick!")
+    (set-bpm (l))))
+```
+
+L-system beats. Evolves every 4 measures.
+
+```racket
+(define rhythm (box (list #t #f #f #t)))
+
+(define (rules n)
+  (cond [(equal? n #t) (list #t #f)]
+        [(equal? n #f) (list #f #t)]))
+
+(define n 0)
+
+(define (evolve)
+  (set-box! (l-system (unbox rhythm) rules 1))
+  (set! n 0))
+
+(define (tick)
+  (define val (= 0 (modulo n (length (unbox rhythm)))))
+  (set! n (+ 1 n))
+  val)
+
+(every (16n)
+  (λ (_)
+    (and (tick) (p "Tick!"))))
+
+(every (* (1n) 4)
+  (λ (_)
+    (p "Evolving...")
+    (evolve))
 ```
 
 ## Livecoding
@@ -106,6 +140,5 @@ TODO...
 * TCP eval Server
 * Tests
 * Docs
-* L-Tree
 * Markov chain
 * Euclidian sequencer
