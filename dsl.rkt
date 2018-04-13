@@ -31,6 +31,9 @@
 (define socket-port
   (make-parameter 1234))
 
+(define current-sleep-time
+  (make-parameter 0.001))
+
 (define (add-receiver port)
   (define receiver (make-receiver port))
   (receiver-start! receiver)
@@ -58,6 +61,7 @@
   (define receivers (current-receivers))
   (define namespace (current-namespace))
   (define prompt-read (current-prompt-read))
+  (define sleep-time (current-sleep-time))
 
   ; Start the socket server.
   (let ([ich (current-ich)]
@@ -90,6 +94,7 @@
         (parameterize ([current-namespace namespace]
                        [current-prompt-read prompt-read])
           (socket-eval! ich och))
+        (sleep sleep-time)
         (loop (+ n 1)))))
 
   (void))
@@ -97,6 +102,7 @@
 (define (start)
   (define clock (current-clock))
   (define stopper (current-stopper))
+  (define sleep-time (current-sleep-time))
 
   (set-box! stopper #t)
   (clock-start! clock)
@@ -104,6 +110,7 @@
     (λ ()
       (let loop ()
         (clock-tick! clock)
+        (sleep sleep-time)
         (and (unbox stopper) (loop)))))
   (void))
 
