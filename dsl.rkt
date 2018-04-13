@@ -285,7 +285,7 @@
 ; Helpers
 ; -------
 
-(define (rotate l)
+(define (rotator l)
   (define n 0)
   (λ ()
     (define v (list-ref l (modulo n (length l))))
@@ -303,3 +303,25 @@
     (define v (lerp v w t))
     (set! t (+ incr t))
     v))
+
+(define (euclidian num-pulses total-steps)
+  (define (generate-chunk n)
+    (for/fold ([l '()])
+              ([i (in-range 0 n)])
+      (append l (list 0))))
+  (define steps '())
+  (define bucket '())
+  (for ([i (in-range 0 total-steps)])
+    (set! bucket (append bucket (generate-chunk num-pulses)))
+    (if (>= (length bucket) total-steps)
+      (begin
+        (set! bucket (drop bucket total-steps))
+        (set! steps (append steps (list 1))))
+      (set! steps (append steps (list 0)))))
+  steps)
+
+(define (rotate-left l n)
+  (append (drop l n) (take l n)))
+  
+(define (rotate-right l n)
+  (append (take-right l n) (drop-right l n)))

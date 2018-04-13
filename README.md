@@ -71,14 +71,14 @@ Run the "Tester 2" Max project, then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule the drums.
-(define snare? (rotate (list #f #t)))
+(define snare? (rotator (list #f #t)))
 (every (4n) (λ (e)
-  (<< s #"/bass-drum")
+  (<< s #"/bass-drum"or
   (and (snare?) (<< s #"/snare-drum")) ))
 
 ; Schedule the bass and lead.
-(define bass (rotate '(24 24 27 24 34 36 22)))
-(define lead (rotate '(48 50 51 48 50 46 53)))
+(define bass (rotator '(24 24 27 24 34 36 22)))
+(define lead (rotator '(48 50 51 48 50 46 53)))
 (every (8n) (λ (e)
   (<< s #"/bass" (bass))
   (<< s #"/lead" (lead))))
@@ -103,9 +103,8 @@ TODO...
 
 ## TODO
 
-* TCP eval Server
+* Euclid example
 * Tests
 * Docs
 * L-Tree
 * Markov chain
-* Euclidian sequencer
