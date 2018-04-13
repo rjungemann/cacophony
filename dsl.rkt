@@ -144,7 +144,7 @@
                                         (let ([in ((current-get-interaction-input-port))])
                                           ((current-read-interaction) (object-name in) in)))]
                  [current-receivers (box (list))]
-                 [current-clock (make-clock 120.0 24.0)])
+                 [current-clock (make-clock 120.0 12.0)])
     (splash)
     (prepare)
     (collect-garbage 'major)

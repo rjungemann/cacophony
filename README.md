@@ -34,7 +34,13 @@ raco pkg install
 
 ## Example
 
-Run the "Tester" Max project, then:
+Either run the "Tester" Max project, or
+
+```
+chuck examples/tester.ck
+```
+
+Then:
 
 ```racket
 ; Start the clock.
@@ -58,7 +64,13 @@ Run the "Tester" Max project, then:
 (<< s #"/status")
 ```
 
-Run the "Tester 2" Max project, then:
+Either run the "Tester 2" Max project, or
+
+```
+chuck examples/ensemble/{subtr.ck,bass-drum.ck,snare-drum.ck,bass.ck,lead.ck}
+```
+
+Then:
 
 ```racket
 ; Start the clock.
