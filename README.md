@@ -137,8 +137,6 @@ TODO...
 
 ## TODO
 
-* TCP eval Server
 * Tests
 * Docs
 * Markov chain
-* Euclidian sequencer

@@ -308,3 +308,25 @@
   (for/fold ([accum current])
             ([i (in-range 0 n)])
     (flatten (map rules accum))))
+
+(define (euclidian num-pulses total-steps)
+  (define (generate-chunk n)
+    (for/fold ([l '()])
+              ([i (in-range 0 n)])
+      (append l (list 0))))
+  (define steps '())
+  (define bucket '())
+  (for ([i (in-range 0 total-steps)])
+    (set! bucket (append bucket (generate-chunk num-pulses)))
+    (if (>= (length bucket) total-steps)
+      (begin
+        (set! bucket (drop bucket total-steps))
+        (set! steps (append steps (list 1))))
+      (set! steps (append steps (list 0)))))
+  steps)
+
+(define (rotate-left l n)
+  (append (drop l n) (take l n)))
+
+(define (rotate-right l n)
+  (append (take-right l n) (drop-right l n)))
