@@ -139,6 +139,24 @@ L-system beats. Evolves every 4 measures.
     (evolve))
 ```
 
+Markov melodies. Try it with rhythms too!
+
+```racket
+(define s (add-sender "127.0.0.1" 13698))
+
+(define notes (list 37 38 37 39 38 40 39 38 37 39 41 37 38 41 39))
+(define m (make-markov notes 1))
+(define note (markov-random m))
+(define (next-note)
+  (define n note)
+  (markov-next m note)
+  n)
+
+(every (8n)
+  (λ (_)
+    (<< s #"/bass" (next-note))))
+```
+
 ## Livecoding
 
 TODO...

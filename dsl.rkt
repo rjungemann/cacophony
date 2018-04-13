@@ -288,8 +288,22 @@
         [o stats-vector])
     (printf "~a: ~a\n" n o)))
 
-; -------
+; =======
 ; Helpers
+; =======
+
+; ------
+; Basics
+; ------
+
+(define (rotate-left l n)
+  (append (drop l n) (take l n)))
+
+(define (rotate-right l n)
+  (append (take-right l n) (drop-right l n)))
+
+; -------
+; Rotator
 ; -------
 
 (define (rotator l)
@@ -298,6 +312,10 @@
     (define v (list-ref l (modulo n (length l))))
     (set! n (+ n 1))
     v))
+
+; -------------
+; Interpolation
+; -------------
 
 (define (lerp v w t)
   (cond [(< t 0.0) v]
@@ -310,6 +328,10 @@
     (define v (lerp v w t))
     (set! t (+ incr t))
     v))
+
+; ---------
+; L-systems
+; ---------
 
 (define (l-system current rules n)
   (for/fold ([accum current])
@@ -332,8 +354,29 @@
       (set! steps (append steps (list 0)))))
   steps)
 
-(define (rotate-left l n)
-  (append (drop l n) (take l n)))
+; ------
+; Markov
+; ------
 
-(define (rotate-right l n)
-  (append (take-right l n) (drop-right l n)))
+(struct markov [data depth lookup])
+
+(define (make-markov data depth)
+  (define d (+ depth 1))
+  (define lookup
+    (for/fold ([accum (hash)])
+              ([i (in-range 0 (- (length data) d -1))])
+      (define focus (take (drop data i) d))
+      (define key (drop-right focus 1))
+      (define value (last focus))
+      (define values
+        (if (hash-has-key? accum key)
+            (append (hash-ref accum key) (list value))
+            (list value)))
+      (hash-set accum key values)))
+  (markov data depth lookup))
+
+(define (markov-next m . args)
+  (first (shuffle (hash-ref (markov-lookup m) args))))
+
+(define (markov-random m)
+  (first (shuffle (markov-data m))))
