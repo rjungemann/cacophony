@@ -12,15 +12,21 @@ Intended to be used with TSlime.vim.
 # Make sure you have Racket installed.
 brew install minimal-racket
 
+# Some optional stuff you can install.
+brew install rlwrap chuck
+
 # Install dependencies.
 raco setup
 # Or...
 yes | raco pkg install --skip-installed rx osc scribble
 
 # Try running.
-racket cacophony.rkt
+racket racket.rkt
+# Or try running it in `rlwrap`:
+rlwrap -S '' racket main.rkt
+
 # Then try typing `(+ 1 1)`, and it should respond `2`.
-# Hit ctrl-d to quit.
+# Hit ctrl-c to quit.
 
 # Try building.
 raco exe -o cacophony main.rkt
@@ -32,7 +38,7 @@ raco exe -o cacophony main.rkt
 raco pkg install
 ```
 
-## Example
+## Examples
 
 Either run the "Tester" Max project, or
 
@@ -157,7 +163,11 @@ Markov melodies. Try it with rhythms too!
     (<< s #"/bass" (next-note))))
 ```
 
-## Livecoding
+## Using the socket
+
+TODO...
+
+## Livecoding with TSlime.vim
 
 TODO...
 
@@ -169,4 +179,3 @@ TODO...
 
 * Tests
 * Docs
-* Markov chain
