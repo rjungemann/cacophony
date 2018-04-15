@@ -27,9 +27,12 @@
 (require racket/async-channel
          osc
          "utils.rkt"
-         "dsl.rkt")
+         "dsl.rkt"
+         "engine.rkt")
 
-(provide (all-from-out "dsl.rkt"))
+(provide (all-from-out "utils.rkt")
+         (all-from-out "dsl.rkt")
+         (all-from-out "engine.rkt"))
 
 (module+ test
   ;; Tests to be run with raco test
