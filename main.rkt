@@ -28,10 +28,12 @@
          osc
          "utils.rkt"
          "dsl.rkt"
+         "ck.rkt"
          "engine.rkt")
 
 (provide (all-from-out "utils.rkt")
          (all-from-out "dsl.rkt")
+         (all-from-out "ck.rkt")
          (all-from-out "engine.rkt"))
 
 (module+ test

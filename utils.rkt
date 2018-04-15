@@ -2,6 +2,15 @@
 
 (provide (all-defined-out))
 
+(define (tempfile code cb)
+  (define path (make-temporary-file))
+  (define o (open-output-file path #:mode 'text #:exists 'truncate))
+  (display code o)
+  (close-output-port o)
+  (cb path)
+  (delete-file path)
+  (void))
+
 (define (p . args)
   (displayln (cyan (apply format args))))
 

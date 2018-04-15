@@ -1,7 +1,8 @@
 #lang racket
 
 (require osc
-         "utils.rkt")
+         "utils.rkt"
+         "ck.rkt")
 
 (provide current-engine-chuck
          current-engine-path
@@ -21,70 +22,55 @@
          shreds
          unshredule)
 
-(define engine-code #<<EOF
-  1 => int running;
-  OscIn oin;
-  OscMsg msg;
-  Std.atoi(me.arg(0)) => oin.port;
-  oin.addAddress("/quit,N");
-  oin.addAddress("/machine/status,N");
-  oin.addAddress("/machine/shreds,N");
-  oin.addAddress("/machine/add,s");
-  oin.addAddress("/machine/remove,i");
-  oin.addAddress("/machine/replace,is");
-
-  chout <= "[engine] running" <= IO.newline();
-
-  while (running != 0) {
-    oin => now;
-    while (oin.recv(msg) != 0) {
-      if (msg.address == "/quit") {
-        0 => running;
-      }
-
-      if (msg.address == "/machine/status") {
-        Machine.status() => int n;
-        chout <= "[engine] " <= n <= IO.newline();
-      }
-
-      if (msg.address == "/machine/shreds") {
-        Machine.shreds() @=> int shreds[];
-        chout <= "[engine] [";
-        for (0 => int i; i < shreds.size(); i++) {
-          chout <= shreds[i];
-          if (i < shreds.size() - 1) { chout <= ", "; }
-        }
-        chout <= "]" <= IO.newline();
-      }
-
-      if (msg.address == "/machine/add") {
-        chout <= "[engine] " <= Machine.add(msg.getString(0)) <= IO.newline();
-      }
-
-      if (msg.address == "/machine/remove") {
-        chout <= "[engine] " <= Machine.remove(msg.getInt(0)) <= IO.newline();
-      }
-
-      if (msg.address == "/machine/replace") {
-        chout <= "[engine] " <= Machine.replace(msg.getInt(0), msg.getString(1)) <= IO.newline();
-      }
-    }
-  }
-
-  chout <= "[engine] quit" <= IO.newline();
-EOF
-)
-
-(define (open-engine-path cb)
-  (define path (make-temporary-file))
-  (define o (open-output-file	path #:mode 'text #:exists 'truncate))
-  (displayln 2)
-  (display engine-code o)
-  (close-output-port o)
-  (displayln 3)
-  (cb path)
-  (delete-file path)
-  (void))
+(define engine-code
+  (ck-do
+    (ck-=> (ck-int 1) (ck-decl 'int 'running))
+    (ck-decl 'OscIn 'oin)
+    (ck-decl 'OscMsg 'msg)
+    (ck-=> (ck-ref-call 'Std 'atoi (ck-ref-call 'me 'arg (ck-int 0)))
+           (ck-ref 'oin 'port))
+    (ck-ref-call 'oin 'addAddress (ck-string "/quit,N"))
+    (ck-ref-call 'oin 'addAddress (ck-string "/machine/status,N"))
+    (ck-ref-call 'oin 'addAddress (ck-string "/machine/shreds,N"))
+    (ck-ref-call 'oin 'addAddress (ck-string "/machine/add,s"))
+    (ck-ref-call 'oin 'addAddress (ck-string "/machine/remove,i"))
+    (ck-ref-call 'oin 'addAddress (ck-string "/machine/replace,is"))
+    (ck-<= ck-chout (ck-string "[engine] running") ck-newline)
+    (ck-while (ck-not-equal? 'running (ck-int 0))
+      (ck-=> 'oin ck-now)
+      (ck-while (ck-not-equal? (ck-ref-call 'oin 'recv 'msg) (ck-int 0))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/quit"))
+          (ck-=> (ck-int 0) 'running))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/machine/status"))
+          (ck-=> (ck-ref-call 'Machine 'status) (ck-decl 'int 'n))
+          (ck-<= ck-chout (ck-string "[engine] ") 'n ck-newline))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/machine/shreds"))
+          (ck-@=> (ck-ref-call 'Machine 'shreds) (ck-array-decl 'int 'shreds))
+          (ck-<= ck-chout (ck-string "[engine] ["))
+          (ck-for (ck-=> (ck-int 0) (ck-decl 'int 'i))
+                  (ck-< 'i (ck-ref-call 'shreds 'size))
+                  (ck-inc 'i)
+            (ck-<= ck-chout (ck-array-ref 'shreds 'i))
+            (ck-if (ck-< 'i (ck-- (ck-ref-call 'shreds 'size) (ck-int 1)))
+              (ck-<= ck-chout (ck-string ", "))))
+          (ck-<= ck-chout (ck-string "]") ck-newline))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/machine/add"))
+          (ck-<= ck-chout
+                 (ck-string "[engine] ")
+                 (ck-ref-call 'Machine 'add (ck-ref-call 'msg 'getString (ck-int 0)))
+                 ck-newline))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/machine/remove"))
+          (ck-<= ck-chout
+                 (ck-string "[engine] ")
+                 (ck-ref-call 'Machine 'remove (ck-ref-call 'msg 'getInt (ck-int 0)))
+                 ck-newline))
+        (ck-if (ck-equal? (ck-ref 'msg 'address) (ck-string "/machine/replace"))
+          (ck-<= ck-chout
+                 (ck-string "[engine] ")
+                 (ck-ref-call 'Machine 'replace (ck-ref-call 'msg 'getInt (ck-int 0))
+                                                (ck-ref-call 'msg 'getString (ck-int 1)))
+                 ck-newline))))
+    (ck-<= ck-chout (ck-string "[engine] quit") ck-newline)))
 
 (define current-engine-chuck
   (make-parameter "/usr/local/bin/chuck"))
@@ -133,13 +119,9 @@ EOF
             (loop)))))))
 
 (define (chuck-start!)
-  #| (when (not (file-exists? (bytes->string/utf-8 (current-engine-path)))) |#
-  #|   (error "Could not find ~a!" (current-engine-path))) |#
-
-  (displayln 1)
-  (open-engine-path
+  (tempfile
+    engine-code
     (λ (path)
-      (displayln path)
       (define-values (p o i e)
         (apply subprocess (list #f #f #f (current-engine-chuck)
                                 (format "--port ~a" (current-engine-chuck-port))
@@ -172,6 +154,7 @@ EOF
   (void))
 
 (define (register-shred! id path)
+  (p "register-shred! ~a ~a" id path)
   (hash-set! (chuck-proc-shreds (unbox (current-engine-chuck-proc))) id path))
 
 (define (deregister-shred! id)
@@ -209,7 +192,7 @@ EOF
     (begin
       (c<- #"/machine/add" path)
       (let ([id (string->number (c->))])
-        (register-shred! path id)
+        (register-shred! id path)
         id))
     (begin
       (p "File not found!")
@@ -221,12 +204,12 @@ EOF
     (deregister-shred! id)
     id))
 
-(define (replace id path)
+(define (replace id path . args)
   (if (file-exists? (bytes->string/utf-8 path))
     (begin
       (c<- #"/machine/replace" id path)
       (let ([id (string->number (c->))])
-        (register-shred! id path)
+        (register-shred! id (string-join (append (list path) args) ":"))
         id))
     (begin
       (p "File not found!")
@@ -234,7 +217,8 @@ EOF
 
 (define (chuck-quit)
   (c<- #"/quit")
-  (c->))
+  (c->)
+  (void))
 
 (define (chuck-info)
   (p "─────")

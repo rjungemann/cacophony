@@ -198,3 +198,4 @@ TODO...
 * Environment variables
 * Break out goodies into their own file
 * Fluidsynth
+* Prefix logs
