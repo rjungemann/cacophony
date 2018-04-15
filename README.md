@@ -179,3 +179,6 @@ TODO...
 
 * Tests
 * Docs
+* Integrate engine
+* Add second osc to subtr
+* Turn subtr into a chubgraph
