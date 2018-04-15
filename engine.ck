@@ -19,8 +19,7 @@ while (running != 0) {
     }
 
     if (msg.address == "/machine/status") {
-      Machine.status() => int n;
-      chout <= "[engine] " <= n <= IO.newline();
+      chout <= "[engine] " <= Machine.status() <= IO.newline();
     }
 
     if (msg.address == "/machine/shreds") {
@@ -28,9 +27,7 @@ while (running != 0) {
       chout <= "[engine] [";
       for (0 => int i; i < shreds.size(); i++) {
         chout <= shreds[i];
-        if (i < shreds.size() - 1) {
-          chout <= ", ";
-        }
+        if (i < shreds.size() - 1) { chout <= ", "; }
       }
       chout <= "]" <= IO.newline();
     }

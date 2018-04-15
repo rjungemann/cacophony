@@ -6,7 +6,8 @@
          "clock.rkt"
          "receiver.rkt"
          "sender.rkt"
-         "socket.rkt")
+         "socket.rkt"
+         "engine.rkt")
 
 (provide (all-defined-out))
 
@@ -77,16 +78,16 @@
     (λ ()
       (let ([signum (read-signal)])
         (printf "~a ~a\n" signum (lookup-signal-name signum))
-        (and (equal? 'SIGINT (lookup-signal-name signum))
-             (exit 130)))))
+        (when (equal? 'SIGINT (lookup-signal-name signum))
+          (exit 130)))))
 
   (thread
     (λ ()
       (let loop ([n 0])
         ; Tell GC to run in incremental mode (must be called sometime after
         ; every major collection).
-        (and (= 0 (modulo n 2000000))
-             (collect-garbage 'incremental))
+        (when (= 0 (modulo n 2000000))
+          (collect-garbage 'incremental))
         ; Receiver messages.
         (for ([receiver (unbox receivers)])
           (receiver-tick! receiver))
@@ -111,7 +112,7 @@
       (let loop ()
         (clock-tick! clock)
         (sleep sleep-time)
-        (and (unbox stopper) (loop)))))
+        (when (unbox stopper) (loop)))))
   (void))
 
 (define (stop)
@@ -154,8 +155,18 @@
                  [current-clock (make-clock 120.0 12.0)])
     (splash)
     (prepare)
-    (collect-garbage 'major)
-    (read-eval-print-loop)))
+
+    ; Engine parameters
+    (parameterize ([current-engine-chuck-port (random-port)]
+                   [current-engine-osc-port (random-port)]
+                   [current-engine-socket (udp-open-socket)]
+                   [current-engine-channel (make-channel)]
+                   [current-subprocess-custodian-mode 'kill])
+      (parameterize([current-engine-chuck-proc (box #f)])
+        ; Take a deep breath...
+        (collect-garbage 'major)
+        ; And go!
+        (read-eval-print-loop)))))
 
 (define (defer cb)
   (clock-at! (current-clock) (now) cb))
@@ -249,16 +260,16 @@
       (if (= (+ 1 i) (hash-count router))
         (p "  └ ~a (~a listeners)" route (length listeners))
         (p "  ├ ~a (~a listeners)" route (length listeners)))))
-  (and (empty? receivers)
-       (p "No receivers!"))
+  (when (empty? receivers)
+    (p "No receivers!"))
   (printf "\n")
   (p "───────")
   (p "Senders")
   (p "───────")
   (for ([s senders])
     (p "~a:~a" (sender-host s) (sender-port s)))
-  (and (empty? senders)
-     (p "No senders"))
+  (when (empty? senders)
+    (p "No senders"))
   (printf "\n")
   (p "─────")
   (p "Stats")

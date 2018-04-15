@@ -2,8 +2,29 @@
 
 (require osc)
 
+(provide current-engine-chuck
+         current-engine-path
+         current-engine-chuck-port
+         current-engine-osc-port
+         current-engine-socket
+         current-engine-channel
+         current-engine-chuck-proc
+         random-port
+         chuck-start!
+         chuck-stop!
+         chuck-info
+         chuck-status
+         chuck-quit
+         shredule
+         replace
+         shreds
+         unshredule)
+
 (define current-engine-chuck
   (make-parameter "/usr/local/bin/chuck"))
+
+(define current-engine-path
+  (make-parameter "engine.ck"))
 
 (define current-engine-chuck-port
   (make-parameter #f))
@@ -53,12 +74,15 @@
           (with-handlers ([exn:fail?
                            (λ (_) eof)])
             (read-line o)))
-        (and (not (eof-object? line))
-             (begin
-               (thread-line-handler ch color line)
-               (loop)))))))
+        (when (not (eof-object? line))
+          (begin
+            (thread-line-handler ch color line)
+            (loop)))))))
 
 (define (chuck-start!)
+  (when (not (file-exists? (bytes->string/utf-8 (current-engine-path))))
+    (error "Could not find ~a!" (current-engine-path)))
+
   (define-values (p o i e)
     (apply subprocess (list #f #f #f (current-engine-chuck)
                             (format "--port ~a" (current-engine-chuck-port))
@@ -66,21 +90,21 @@
   (define oth (thread-output-handler o blue))
   (define eth (thread-output-handler e yellow))
   (c->) ; Wait for first message from chuck.
-  (box (chuck-proc p o i e oth eth (make-hash))))
+  (set-box! (current-engine-chuck-proc) (chuck-proc p o i e oth eth (make-hash))))
 
 (define (chuck-stop!)
   (define c (unbox (current-engine-chuck-proc)))
-  (and c
-       (begin
-         (close-output-port (chuck-proc-i c))
-         (close-input-port (chuck-proc-o c))
-         (close-input-port (chuck-proc-e c))
-         (and (not (udp-bound? (current-engine-socket)))
-              (udp-close (current-engine-socket)))
-         (subprocess-kill (chuck-proc-p c) #t)
-         (kill-thread (chuck-proc-oth c))
-         (kill-thread (chuck-proc-eth c))
-         (set-box! (current-engine-chuck-proc) #f)))
+  (when c
+    (begin
+      (close-output-port (chuck-proc-i c))
+      (close-input-port (chuck-proc-o c))
+      (close-input-port (chuck-proc-e c))
+      (when (not (udp-bound? (current-engine-socket)))
+        (udp-close (current-engine-socket)))
+      (subprocess-kill (chuck-proc-p c) #t)
+      (kill-thread (chuck-proc-oth c))
+      (kill-thread (chuck-proc-eth c))
+      (set-box! (current-engine-chuck-proc) #f)))
   (void))
 
 (define (p . args)
@@ -157,25 +181,7 @@
   (c<- #"/quit")
   (c->))
 
-(define (chuck-splash)
+(define (chuck-info)
   (p "chuck pid ~a" (subprocess-pid (chuck-proc-p (unbox (current-engine-chuck-proc)))))
   (p "chuck tcp port ~a" (current-engine-chuck-port))
   (p "chuck osc port ~a" (current-engine-osc-port)))
-
-; TODO: Integrate into cacophony
-(parameterize ([current-engine-chuck-port (random-port)]
-               [current-engine-osc-port (random-port)]
-               [current-engine-socket (udp-open-socket)]
-               [current-engine-channel (make-channel)]
-               [current-subprocess-custodian-mode 'kill])
-  (parameterize([current-engine-chuck-proc (chuck-start!)])
-    (chuck-splash)
-    (chuck-status)
-
-    (p "~a" (shredule #"examples/sample.ck"))
-    (p "~a" (replace 2 #"examples/sample.ck"))
-    (p "~a" (shreds))
-    (p "~a" (unshredule 2))
-
-    (chuck-quit)
-    (chuck-stop!)))

@@ -163,6 +163,22 @@ Markov melodies. Try it with rhythms too!
     (<< s #"/bass" (next-note))))
 ```
 
+Managing ChucK:
+
+```
+(chuck-start!)
+(chuck-info)
+
+(chuck-status)
+(p "~a" (shredule #"examples/sample.ck"))
+(p "~a" (replace 2 #"examples/sample.ck"))
+(p "~a" (shreds))
+(p "~a" (unshredule 2))
+
+(chuck-quit)
+(chuck-stop!)
+```
+
 ## Using the socket
 
 TODO...
@@ -179,4 +195,3 @@ TODO...
 
 * Tests
 * Docs
-* Integrate engine
