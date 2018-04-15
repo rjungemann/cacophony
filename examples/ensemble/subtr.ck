@@ -1,54 +1,56 @@
-public class Subtr {
+public class Subtr extends Chubgraph {
+  float spread;
   float filtermult;
   float filteroffset;
-  SndBuf shape;
-  Gain oscgain;
+  SndBuf shape1;
+  SndBuf shape2;
+  Gain oscgain1;
+  Gain oscgain2;
   ADSR ampenv;
   ADSR filterenv;
   LPF lpf;
 
-  1 => shape.loop;
-  shape => oscgain => lpf => ampenv;
+  inlet => shape1 => oscgain1;
+  inlet => shape2 => oscgain2;
+  oscgain1 => lpf;
+  oscgain2 => lpf;
+  lpf => ampenv => outlet;
 
+  0.07 => spread;
+  1 => shape1.loop;
+  1 => shape2.loop;
+  0.5 => oscgain1.gain;
+  0.5 => oscgain2.gain;
   1500.0 => filtermult;
   200.0 => filteroffset;
 
-  // TODO: Allow to only be called once.
-  public void setup(string path) {
-    path => shape.read;
-    spork ~ envdrive();
+  fun void read (string s) {
+    s => shape1.read;
+    s => shape2.read;
   }
 
-  public void connect(UGen ugen) {
-    ampenv => ugen;
+  fun void freq (float f) {
+    f => Std.ftom => float m;
+    m + spread => Std.mtof => shape1.freq;
+    m - spread => Std.mtof => shape2.freq;
   }
 
-  public void keyOn() {
-    ampenv.keyOn();
+  fun void keyOn () {
     filterenv.keyOn();
+    ampenv.keyOn();
   }
 
-  public void keyOff() {
-    ampenv.keyOff();
+  fun void keyOff () {
     filterenv.keyOff();
+    ampenv.keyOff();
   }
 
   fun void envdrive () {
     while (true) {
       filterenv.last() * filtermult + filteroffset => lpf.freq;
-      5::ms => now;
+      1::ms => now;
     }
   }
-}
 
-/* Subtr s; */
-/* s.setup(me.dir() + "AKWF_0001.wav"); */
-/* s.connect(dac); */
-/* 36.0 => Std.mtof => s.shape.freq; */
-/* 0.5 => s.oscgain.gain; */
-/* s.ampenv.set(1::ms, 350::ms, 0.2, 500::ms); */
-/* s.filterenv.set(15::ms, 550::ms, 0.2, 400::ms); */
-/* s.keyOn(); */
-/* 100::ms => now; */
-/* s.keyOff(); */
-/* 1000::ms => now; */
+  spork ~ envdrive();
+}
