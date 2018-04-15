@@ -195,3 +195,6 @@ TODO...
 
 * Tests
 * Docs
+* Embedding `engine.ck`?
+* Environment variables
+* Break out goodies into their own file

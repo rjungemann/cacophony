@@ -1,6 +1,7 @@
 #lang racket
 
-(require osc)
+(require osc
+         "utils.rkt")
 
 (provide current-engine-chuck
          current-engine-path
@@ -43,19 +44,6 @@
 
 (define current-engine-channel
   (make-parameter #f))
-
-(define (random-port)
-  (define listener (tcp-listen 0))
-  (define port #f)
-  (call-with-values
-    (lambda () (tcp-addresses listener #t))
-    (lambda (a b c d) (set! port b)))
-  (tcp-close listener)
-  port)
-
-(define (cyan s) (string-append "\u001b[36m" s "\u001b[0m"))
-(define (blue s) (string-append "\u001b[34m" s "\u001b[0m"))
-(define (yellow s) (string-append "\u001b[33m" s "\u001b[0m"))
 
 (struct chuck-proc [p o i e oth eth shreds] #:mutable)
 
@@ -106,9 +94,6 @@
       (kill-thread (chuck-proc-eth c))
       (set-box! (current-engine-chuck-proc) #f)))
   (void))
-
-(define (p . args)
-  (displayln (cyan (apply format args))))
 
 (define (c<- route . args)
   (udp-send-to (current-engine-socket)
@@ -182,6 +167,9 @@
   (c->))
 
 (define (chuck-info)
-  (p "chuck pid ~a" (subprocess-pid (chuck-proc-p (unbox (current-engine-chuck-proc)))))
-  (p "chuck tcp port ~a" (current-engine-chuck-port))
-  (p "chuck osc port ~a" (current-engine-osc-port)))
+  (p "─────")
+  (p "ChucK")
+  (p "─────")
+  (p "PID ~a" (subprocess-pid (chuck-proc-p (unbox (current-engine-chuck-proc)))))
+  (p "TCP port ~a" (current-engine-chuck-port))
+  (p "OSC port ~a" (current-engine-osc-port)))

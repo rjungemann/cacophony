@@ -7,7 +7,8 @@
          "receiver.rkt"
          "sender.rkt"
          "socket.rkt"
-         "engine.rkt")
+         "engine.rkt"
+         "utils.rkt")
 
 (provide (all-defined-out))
 
@@ -216,36 +217,6 @@
 (define (beats->ppqn beats)
   (* (clock-ppqn (current-clock)) beats))
 
-(define (1nd) 6)
-(define (1n) 4)
-(define (1nt) (/ 8.0 3.0))
-(define (2nd) 3)
-(define (2n) 2)
-(define (2nt) (/ 4.0 3.0))
-(define (4nd) 1.5)
-(define (4n) 1)
-(define (4nt) (/ 2.0 3.0))
-(define (8nd) 0.75)
-(define (8n) 0.5)
-(define (8nt) (/ 1.0 3.0))
-(define (16nd) 0.375)
-(define (16n) 0.25)
-(define (16nt) (/ 1.0 6.0))
-(define (32nd) 0.1875) ; NOTE: Can't be used at 24 ppqn!
-(define (32n) 0.125)
-(define (32nt) (/ 1.0 12.0))
-(define (64nd) 0.09375) ; NOTE: Can't be used at 24 ppqn!
-(define (64n) 0.0625) ; NOTE: Can't be used at 24 ppqn!
-(define (64nt) (/ 1.0 24.0))
-
-(define (cyan s) (string-append "\u001b[36m" s "\u001b[0m"))
-(define (blue s) (string-append "\u001b[34m" s "\u001b[0m"))
-(define (yellow s) (string-append "\u001b[33m" s "\u001b[0m"))
-(define (magenta s) (string-append "\u001b[35m" s "\u001b[0m"))
-
-(define (p . args)
-  (displayln (cyan (apply format args))))
-
 (define (status)
   (define receivers (unbox (current-receivers)))
   (define senders (unbox (current-senders)))
@@ -302,6 +273,32 @@
 ; =======
 ; Helpers
 ; =======
+
+; ---------
+; Intervals
+; ---------
+
+(define (1nd) 6)
+(define (1n) 4)
+(define (1nt) (/ 8.0 3.0))
+(define (2nd) 3)
+(define (2n) 2)
+(define (2nt) (/ 4.0 3.0))
+(define (4nd) 1.5)
+(define (4n) 1)
+(define (4nt) (/ 2.0 3.0))
+(define (8nd) 0.75)
+(define (8n) 0.5)
+(define (8nt) (/ 1.0 3.0))
+(define (16nd) 0.375)
+(define (16n) 0.25)
+(define (16nt) (/ 1.0 6.0))
+(define (32nd) 0.1875) ; NOTE: Can't be used at 24 ppqn!
+(define (32n) 0.125)
+(define (32nt) (/ 1.0 12.0))
+(define (64nd) 0.09375) ; NOTE: Can't be used at 24 ppqn!
+(define (64n) 0.0625) ; NOTE: Can't be used at 24 ppqn!
+(define (64nt) (/ 1.0 24.0))
 
 ; ------
 ; Basics

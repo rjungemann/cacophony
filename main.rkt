@@ -26,6 +26,7 @@
 
 (require racket/async-channel
          osc
+         "utils.rkt"
          "dsl.rkt")
 
 (provide (all-from-out "dsl.rkt"))
