@@ -20,14 +20,18 @@
   (make-parameter (box #f)))
 
 (define (fluid-start!)
-  (set-box! (current-fluid-proc)
-            (fluid-full-start! (current-fluid-fluidsynth-path)
-                               (current-fluid-soundfont-path))))
+  (define f (unbox (current-fluid-proc)))
+  (when (not f)
+    (set-box! (current-fluid-proc)
+              (fluid-full-start! (current-fluid-fluidsynth-path)
+                                 (current-fluid-soundfont-path)))))
 
 (define (fluid-stop!)
   (define f (unbox (current-fluid-proc)))
-  (fluid-full-stop! f)
-  (set-box! (current-fluid-proc) #f))
+  (when f
+    (fluid-full-stop! f)
+    (set-box! (current-fluid-proc) #f))
+  (void))
 
 (define (fluid-send! msg)
   (define f (unbox (current-fluid-proc)))

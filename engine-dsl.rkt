@@ -41,14 +41,18 @@
   (make-parameter #f))
 
 (define (engine-start!)
-  (set-box! (current-engine-proc) (engine-full-start! (current-engine-chuck)
-                                                      (current-engine-chuck-port)
-                                                      (current-engine-osc-port)
-                                                      (current-engine-channel))))
+  (define c (current-engine-proc))
+  (when (not c)
+    (set-box! (current-engine-proc) (engine-full-start! (current-engine-chuck)
+                                                        (current-engine-chuck-port)
+                                                        (current-engine-osc-port)
+                                                        (current-engine-channel)))))
 
 (define (engine-stop!)
-  (engine-full-stop! (current-engine-proc) (current-engine-socket))
-  (set-box! (current-engine-proc) #f)
+  (define c (current-engine-proc))
+  (when c
+    (engine-full-stop! (current-engine-proc) (current-engine-socket))
+    (set-box! (current-engine-proc) #f))
   (void))
 
 (define (engine-receive!)

@@ -79,9 +79,8 @@
                            (λ (_) eof)])
             (read-line o)))
         (when (not (eof-object? line))
-          (begin
-            (thread-line-handler ch color line)
-            (loop)))))))
+          (thread-line-handler ch color line)
+          (loop))))))
 
 (define (engine-full-start! chuck chuck-port osc-port ch)
   (tempfile
@@ -99,14 +98,13 @@
 
 (define (engine-full-stop! c socket)
   (when c
-    (begin
-      (close-output-port (engine-proc-i c))
-      (close-input-port (engine-proc-o c))
-      (close-input-port (engine-proc-e c))
-      (when (not (udp-bound? socket)) (udp-close socket))
-      (subprocess-kill (engine-proc-p c) #t)
-      (kill-thread (engine-proc-oth c))
-      (kill-thread (engine-proc-eth c))))
+    (close-output-port (engine-proc-i c))
+    (close-input-port (engine-proc-o c))
+    (close-input-port (engine-proc-e c))
+    (when (not (udp-bound? socket)) (udp-close socket))
+    (subprocess-kill (engine-proc-p c) #t)
+    (kill-thread (engine-proc-oth c))
+    (kill-thread (engine-proc-eth c)))
   (void))
 
 (define (engine-full-receive! ch)
