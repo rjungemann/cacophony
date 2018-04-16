@@ -165,7 +165,7 @@ Markov melodies. Try it with rhythms too!
 
 Managing ChucK:
 
-```
+```racket
 (engine-start!)
 (engine-info)
 
@@ -176,6 +176,16 @@ Managing ChucK:
 
 (engine-quit)
 (engine-stop!)
+```
+
+Managing Fluidsynth:
+
+```racket
+(fluid-start!)
+(fluid-send! "noteon 1 48 64")
+(fluid-flush!)
+(sleep 2)
+(fluid-stop!)
 ```
 
 ## Using the socket
@@ -196,5 +206,3 @@ TODO...
 * Docs
 * Environment variables
 * Break out goodies into their own file
-* Integrate fluid
-* Prefix logs

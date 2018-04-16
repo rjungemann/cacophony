@@ -68,7 +68,7 @@
   (let ([m (regexp-match #rx"^\\[engine\\] (.*)$" line)])
     (if m
       (channel-put ch (last m))
-      (printf (color "~a\n") line))))
+      (printf (color "[chuck] ~a\n") line))))
 
 (define (thread-output-handler ch o color)
   (thread
