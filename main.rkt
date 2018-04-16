@@ -29,12 +29,12 @@
          "utils.rkt"
          "dsl.rkt"
          "ck.rkt"
-         "engine.rkt")
+         "engine-dsl.rkt")
 
 (provide (all-from-out "utils.rkt")
          (all-from-out "dsl.rkt")
          (all-from-out "ck.rkt")
-         (all-from-out "engine.rkt"))
+         (all-from-out "engine-dsl.rkt"))
 
 (module+ test
   ;; Tests to be run with raco test

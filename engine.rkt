@@ -4,23 +4,13 @@
          "utils.rkt"
          "ck.rkt")
 
-(provide current-engine-chuck
-         current-engine-path
-         current-engine-chuck-port
-         current-engine-osc-port
-         current-engine-socket
-         current-engine-channel
-         current-engine-chuck-proc
-         random-port
-         chuck-start!
-         chuck-stop!
-         chuck-info
-         chuck-status
-         chuck-quit
-         shredule
-         replace
-         shreds
-         unshredule)
+(provide engine-full-start!
+         engine-full-stop!
+         engine-full-send!
+         engine-full-receive!
+         engine-full-register-shred!
+         engine-full-deregister-shred!
+         (struct-out engine-proc))
 
 (define engine-code
   (ck-do
@@ -72,31 +62,7 @@
                  ck-newline))))
     (ck-<= ck-chout (ck-string "[engine] quit") ck-newline)))
 
-(define current-engine-chuck
-  (make-parameter "/usr/local/bin/chuck"))
-
-(define current-engine-path
-  (make-parameter "engine.ck"))
-
-(define current-engine-chuck-port
-  (make-parameter #f))
-
-(define current-engine-osc-port
-  (make-parameter #f))
-
-(define current-engine-socket
-  (make-parameter #f))
-
-(define current-engine-host
-  (make-parameter "127.0.0.1"))
-
-(define current-engine-chuck-proc
-  (make-parameter #f))
-
-(define current-engine-channel
-  (make-parameter #f))
-
-(struct chuck-proc [p o i e oth eth shreds] #:mutable)
+(struct engine-proc [p o i e oth eth shreds] #:mutable)
 
 (define (thread-line-handler ch color line)
   (let ([m (regexp-match #rx"^\\[engine\\] (.*)$" line)])
@@ -104,8 +70,7 @@
       (channel-put ch (last m))
       (printf (color "~a\n") line))))
 
-(define (thread-output-handler o color)
-  (define ch (current-engine-channel))
+(define (thread-output-handler ch o color)
   (thread
     (λ ()
       (let loop ()
@@ -118,112 +83,41 @@
             (thread-line-handler ch color line)
             (loop)))))))
 
-(define (chuck-start!)
+(define (engine-full-start! chuck chuck-port osc-port ch)
   (tempfile
     engine-code
     (λ (path)
       (define-values (p o i e)
-        (apply subprocess (list #f #f #f (current-engine-chuck)
-                                (format "--port ~a" (current-engine-chuck-port))
-                                (format "~a:~a" path (current-engine-osc-port)))))
-      (define oth (thread-output-handler o blue))
-      (define eth (thread-output-handler e yellow))
-      (c->) ; Wait for first message from chuck.
-      (set-box! (current-engine-chuck-proc) (chuck-proc p o i e oth eth (make-hash))))))
+        (apply subprocess (list #f #f #f
+                                chuck
+                                (format "--port ~a" chuck-port)
+                                (format "~a:~a" path osc-port))))
+      (define oth (thread-output-handler ch o blue))
+      (define eth (thread-output-handler ch e yellow))
+      (engine-full-receive! ch) ; Wait for first message from chuck.
+      (engine-proc p o i e oth eth (make-hash)))))
 
-(define (chuck-stop!)
-  (define c (unbox (current-engine-chuck-proc)))
+(define (engine-full-stop! c socket)
   (when c
     (begin
-      (close-output-port (chuck-proc-i c))
-      (close-input-port (chuck-proc-o c))
-      (close-input-port (chuck-proc-e c))
-      (when (not (udp-bound? (current-engine-socket)))
-        (udp-close (current-engine-socket)))
-      (subprocess-kill (chuck-proc-p c) #t)
-      (kill-thread (chuck-proc-oth c))
-      (kill-thread (chuck-proc-eth c))
-      (set-box! (current-engine-chuck-proc) #f)))
+      (close-output-port (engine-proc-i c))
+      (close-input-port (engine-proc-o c))
+      (close-input-port (engine-proc-e c))
+      (when (not (udp-bound? socket)) (udp-close socket))
+      (subprocess-kill (engine-proc-p c) #t)
+      (kill-thread (engine-proc-oth c))
+      (kill-thread (engine-proc-eth c))))
   (void))
 
-(define (c<- route . args)
-  (udp-send-to (current-engine-socket)
-               (current-engine-host)
-               (current-engine-osc-port)
-               (osc-element->bytes (osc-message route args)))
+(define (engine-full-receive! ch)
+  (channel-get ch))
+
+(define (engine-full-send! socket host osc-port route . args)
+  (udp-send-to socket host osc-port (osc-element->bytes (osc-message route args)))
   (void))
 
-(define (register-shred! id path)
-  (p "register-shred! ~a ~a" id path)
-  (hash-set! (chuck-proc-shreds (unbox (current-engine-chuck-proc))) id path))
+(define (engine-full-register-shred! c id path)
+  (hash-set! (engine-proc-shreds c) id path))
 
-(define (deregister-shred! id)
-  (hash-remove! (chuck-proc-shreds (unbox (current-engine-chuck-proc))) id))
-
-(define (map-shreds ids)
-  (let* ([c (unbox (current-engine-chuck-proc))]
-         [shred-map (chuck-proc-shreds c)]
-         [new-shred-map (make-hash)])
-    (for ([id ids])
-      (cond
-        [(= id 1)
-         (void)]
-        [(hash-has-key? shred-map id)
-         (hash-set! new-shred-map id (hash-ref shred-map id))]
-        [else
-         (hash-set! new-shred-map id 'unknown)]))
-    (set-chuck-proc-shreds! c new-shred-map)
-    new-shred-map))
-
-(define (c->)
-  (channel-get (current-engine-channel)))
-
-(define (chuck-status)
-  (c<- #"/machine/status")
-  (c->)
-  (void))
-
-(define (shreds)
-  (c<- #"/machine/shreds")
-  (map-shreds (map string->number (regexp-match* #rx"[0-9]+" (c->)))))
-
-(define (shredule path)
-  (if (file-exists? (bytes->string/utf-8 path))
-    (begin
-      (c<- #"/machine/add" path)
-      (let ([id (string->number (c->))])
-        (register-shred! id path)
-        id))
-    (begin
-      (p "File not found!")
-      -1)))
-
-(define (unshredule id)
-  (c<- #"/machine/remove" id)
-  (let ([id (string->number (c->))])
-    (deregister-shred! id)
-    id))
-
-(define (replace id path . args)
-  (if (file-exists? (bytes->string/utf-8 path))
-    (begin
-      (c<- #"/machine/replace" id path)
-      (let ([id (string->number (c->))])
-        (register-shred! id (string-join (append (list path) args) ":"))
-        id))
-    (begin
-      (p "File not found!")
-      0)))
-
-(define (chuck-quit)
-  (c<- #"/quit")
-  (c->)
-  (void))
-
-(define (chuck-info)
-  (p "─────")
-  (p "ChucK")
-  (p "─────")
-  (p "PID ~a" (subprocess-pid (chuck-proc-p (unbox (current-engine-chuck-proc)))))
-  (p "TCP port ~a" (current-engine-chuck-port))
-  (p "OSC port ~a" (current-engine-osc-port)))
+(define (engine-full-deregister-shred! c id)
+  (hash-remove! (engine-proc-shreds c) id))

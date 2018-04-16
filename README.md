@@ -166,17 +166,16 @@ Markov melodies. Try it with rhythms too!
 Managing ChucK:
 
 ```
-(chuck-start!)
-(chuck-info)
+(engine-start!)
+(engine-info)
 
-(chuck-status)
-(p "~a" (shredule #"examples/sample.ck"))
-(p "~a" (replace 2 #"examples/sample.ck"))
-(p "~a" (shreds))
-(p "~a" (unshredule 2))
+(p "~a" (engine-shredule #"examples/sample.ck"))
+(p "~a" (engine-replace 2 #"examples/sample.ck"))
+(p "~a" (engine-shreds))
+(p "~a" (engine-unshredule 2))
 
-(chuck-quit)
-(chuck-stop!)
+(engine-quit)
+(engine-stop!)
 ```
 
 ## Using the socket
@@ -197,5 +196,5 @@ TODO...
 * Docs
 * Environment variables
 * Break out goodies into their own file
-* Fluidsynth
+* Integrate fluid
 * Prefix logs

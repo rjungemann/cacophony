@@ -3,12 +3,12 @@
 (require osc
          rx/event-emitter
          unix-signals
+         "utils.rkt"
          "clock.rkt"
          "receiver.rkt"
          "sender.rkt"
          "socket.rkt"
-         "engine.rkt"
-         "utils.rkt")
+         "engine-dsl.rkt")
 
 (provide (all-defined-out))
 
@@ -163,7 +163,7 @@
                    [current-engine-socket (udp-open-socket)]
                    [current-engine-channel (make-channel)]
                    [current-subprocess-custodian-mode 'kill])
-      (parameterize([current-engine-chuck-proc (box #f)])
+      (parameterize([current-engine-proc (box #f)])
         ; Take a deep breath...
         (collect-garbage 'major)
         ; And go!
