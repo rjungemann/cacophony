@@ -4,7 +4,7 @@ By Roger Jungemann
 
 A livecoding system in Racket. Juggle OSC connections and schedule events.
 
-Intended to be used with TSlime.vim.
+Intended to be used with [TSlime.vim](/Users/admin/Desktop/macro-stuff).
 
 ## Setup
 
@@ -107,8 +107,13 @@ Then:
 Dynamically scaling BPM with linear interpolation.
 
 ```racket
+; Start the clock.
+(start)
+
+; Define a lerper.
 (define l (lerper 120 60 0.1))
 
+; Gradually decrease the tempo.
 (every (4n)
   (λ (_)
     (p "Tick!")
