@@ -4,7 +4,7 @@
 
 (provide ck)
 
-; Generates the `ck` macro with the names of functions scoped inside of it. 
+; Generates the `ck` macro with the names of functions scoped inside of it.
 (define-macro (def-scope name pairs)
   `(define-macro (,name . body)
     (define pairs (quote ,pairs))
