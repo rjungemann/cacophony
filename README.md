@@ -213,5 +213,4 @@ TODO...
 * Break out goodies into their own file
 * Timeout for engine calls
 * Move example into their own file
-* Relative and absolute positions for Alm
 * Integrate Alm

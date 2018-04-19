@@ -314,6 +314,16 @@
 ; Rotator
 ; -------
 
+(define (generator notes)
+  (define i 0)
+  (λ ()
+    (if (< i (- (length notes) i))
+      (let ([n (list-ref notes i)])
+        (define n (list-ref notes i))
+        (set! i (+ i 1))
+        n)
+      #f)))
+
 (define (rotator l)
   (define n 0)
   (λ ()

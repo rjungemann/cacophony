@@ -181,6 +181,20 @@
           (list n)))
     elements))
 
+(define (alm-fix-absolute-times elements)
+  (map
+    (λ (n)
+      (cond
+       [(equal? (first n) 'noteon)
+        (list-set n (- (length n) 1) (first (last n)))]
+       [(equal? (first n) 'noteoff)
+        (list-set n (- (length n) 1) (last (last n)))]
+       [(equal? (first n) 'rest)
+        (list-set n (- (length n) 1) (first (last n)))]
+       [else
+        n]))
+    elements))
+
 (define (alm-parse body)
   (define duration-box (box 1.0))
   (define octave-box (box 3))
@@ -193,7 +207,23 @@
       (alm-preprocess-ties)
       (alm-strip-ties)
       (alm-generate-note-pairs)
-      (filter-falses)))
+      (filter-falses)
+      (alm-fix-absolute-times)))
 
 (define-macro (alm . body)
   `(alm-parse (quote ,body)))
+
+#|
+(define (run-alm notes cb)
+  (for ([note notes])
+    (when (or (equal? (first note) 'noteon)
+              (equal? (first note) 'noteoff))
+      (after (last note) (λ (e) (cb e note))))))
+
+(define notes
+  (alm a4. > v10 b+2 < p4 a#4 l8 p v32 a ~ b ~ c o5 a-2 ~ a-4 c c+2. ~))
+
+(run-alm notes
+  (λ (_ n)
+    (fluid-send! 1 (first n) (second n))))
+|#
