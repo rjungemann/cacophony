@@ -26,6 +26,7 @@
 
 (require racket/async-channel
          osc
+         threading
          "utils.rkt"
          "dsl.rkt"
          "ck.rkt"
@@ -33,7 +34,8 @@
          "engine-dsl.rkt"
          "fluid-dsl.rkt")
 
-(provide (all-from-out "utils.rkt")
+(provide (all-from-out threading)
+         (all-from-out "utils.rkt")
          (all-from-out "dsl.rkt")
          (all-from-out "ck.rkt")
          (all-from-out "alm.rkt")

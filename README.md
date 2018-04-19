@@ -232,3 +232,8 @@ TODO...
 * Timeout for engine calls
 * Move example into their own file
 * `next-beat` function for scheduling something to run on the next beat
+* Alm should pass through non-tokens
+* Alm validation
+* Integrate wavetable, subtr, and rec
+* Some simplified interface for defining synths and samplers
+* Register shreds shortcut for `(tempfile (ck ...))`
