@@ -1,151 +1,199 @@
 #lang racket
 
 (require compatibility/defmacro
-         zippers)
+         threading)
 
 (provide alm
-         (all-from-out zippers))
+         alm-parse)
 
-(define-for-syntax defs
-  (let ([list-box (box '())]
-        [define-in! (λ (b k v) (set-box! b (append (unbox b) (list (list k v)))))])
-    ; Helpers.
-    (define note-offset-lookup
-      (hash "a" 0 "b" 2 "c" 3 "d" 5 "e" 7 "f" 8 "g" 10))
-    (define accidental-offset-lookup
-      (hash "-" -1 #f 0 "+" 1 "#" 1))
-    (define (note-offset n a)
-      (+ (hash-ref note-offset-lookup n) (hash-ref accidental-offset-lookup a)))
-    (define (duration d dd)
-      (if d (if dd (* (/ 1.0 d) 1.5) (/ 1.0 d)) d))
-    ; Note definitions.
-    (for ([n (list "a" "b" "c" "d" "e" "f" "g")])
-      (for ([a (list "-" #f "+" "#")])
-        (for ([d (list #f 1 2 4 8 16)])
-          (for ([dd (list #f #t)])
-            (define name (format "~a~a~a~a" n (if a a "") (if d d "") (if dd "." "")))
-            (define-in! list-box (string->symbol name)
-                                 `(list 'note ,(note-offset n a) ,(duration d dd)))))))
-    ; Pause definitions.
-    (for ([d (list #f 1 2 4 8 16)])
-      (for ([dd (list #f #t)])
-        (define name-p (format "p~a~a" (if d d "") (if dd "." "")))
-        (define-in! list-box (string->symbol name-p) `(list 'rest ,(duration d dd)))
-        (define name-r (format "r~a~a" (if d d "") (if dd "." "")))
-        (define-in! list-box (string->symbol name-r) `(list 'rest ,(duration d dd)))))
-    ; Length definitions.
-    (for ([d (list #f 1 2 4 8 16)])
-      (for ([dd (list #f #t)])
-        (define name (format "l~a~a" (if d d "") (if dd "." "")))
-        (define-in! list-box (string->symbol name) `(list 'length ,(duration d dd)))))
-    ; Octave definitions.
-    (for ([o (list -2 -1 0 1 2 3 4 5 6 7 8 9)])
-      (define name (format "o~a" o))
-      (define-in! list-box (string->symbol name) `(list 'octave ,o)))
-    (define-in! list-box '< `(list 'octave-up))
-    (define-in! list-box '> `(list 'octave-down))
-    ; Tie definition.
-    (define-in! list-box '~ `(list 'tie))
-    ; Velocity definitions.
-    (for ([v (in-range 1 128)])
-      (define name (format "v~a" v))
-      (define-in! list-box (string->symbol name) `(list 'velocity ,v)))
-    (unbox list-box)))
+(define (alm-note? s)
+  (regexp-match #rx"^[abcdefg][-+#]?[0-9]*\\.?$" s))
 
-(define-for-syntax define-parse
-  `(define (parse . events)
-    (define current-time 0)
-    (define current-octave 3)
-    (define current-duration 0.25)
-    (define current-velocity 64)
-    (define event-list '())
-    (define helpers
-      (hash
-        'note
-        (λ (note-offset duration)
-          (set! event-list
-                (append event-list
-                        (list (list 'noteon
-                                    (+ (* current-octave 12) note-offset)
-                                    current-velocity
-                                    current-time)
-                              (list 'noteoff
-                                    (+ (* current-octave 12) note-offset)
-                                    0
-                                    (+ current-time (or duration current-duration))))))
-          (set! current-time (+ current-time (or duration current-duration))))
-        'rest
-        (λ (duration)
-          (set! current-time (+ current-time (or duration current-duration))))
-        'length
-        (λ (duration)
-          (set! current-duration duration))
-        'octave
-        (λ (octave)
-          (set! current-octave octave))
-        'octave-up
-        (λ ()
-          (set! current-octave (+ current-octave 1)))
-        'octave-down
-        (λ ()
-          (set! current-octave (- current-octave 1)))
-        'tie
-        (λ ()
-          (set! event-list (append event-list (list (list 'tie)))))
-        'velocity
-        (λ (v)
-          (set! current-velocity v))))
-    (for ([event events])
-      (apply (hash-ref helpers (car event) #f) (cdr event)))
-    event-list))
+(define note-offsets
+  (hash "a" 0 "b" 2 "c" 3 "d" 5 "e" 7 "f" 8 "g" 10))
 
-(define-for-syntax define-handle-ties
-  `(define (handle-ties events)
-    (define (rem-n l n)
-      (append (take l n) (drop l (+ n 1))))
-    (define z (down/list-first (zip events)))
-    (let loop ()
-      ; If a tie is encountered,
-      (if (and (not (empty? (zipper-focus z)))
-               (equal? (first (zipper-focus z)) 'tie))
-        (begin
-          ; Examine the previous element.
-          (set! z (left/list z))
-          (let ([p-n (list-ref (zipper-focus z) 1)])
-            ; Empty the previous element.
-            (set! z (edit (λ (v) '()) z))
-            ; Examine the current element.
-            (set! z (right/list z))
-            ; Empty the current element
-            (set! z (edit (λ (v) '()) z))
-            ; If the next element is a noteon, and is the same note as the
-            ; previous element, empty it.
-            (if (can-move? right/list z)
-              (set! z (right/list z))
-              (when (and (equal? (first (zipper-focus z)) 'noteon)
-                         (equal? (list-ref (zipper-focus z) 1) p-n))
-                (edit (λ (v) '()) z)
-                (set! z (left/list z))))))
-        ; Set the current element to the next element.
-        (set! z (right/list z)))
-      ; Keep looping while we can move rightward.
-      (if (can-move? right/list z)
-        (loop)
-        (begin
-          ; If there's a tie at the end, replace it with an empty.
-          (when (and (not (empty? (zipper-focus z)))
-                   (equal? (first (zipper-focus z)) 'tie))
-            (set! z (left/list z))
-            (set! z (edit (λ (v) '()) z))
-            (set! z (right/list z))
-            (set! z (edit (λ (v) '()) z)))
-          ; Strip the empties.
-          (filter (λ (n) (not (empty? n))) (zipper-focus (up z))))))))
+(define (alm-process-note s octave-box duration-box velocity-box)
+  (define flat? (regexp-match #rx"\\-" s))
+  (define sharp? (regexp-match #rx"[+#]" s))
+  (define basic-note (first (regexp-match #rx"^[a-g]" s)))
+  (define basic-note-offset (hash-ref note-offsets basic-note))
+  (define note-offset (cond [flat? (- basic-note-offset 1)]
+                            [sharp? (+ basic-note-offset 1)]
+                            [else basic-note-offset]))
+  (define note (+ (* (unbox octave-box) 12) note-offset))
+  (define basic-duration-match (regexp-match #rx"[0-9]+" s))
+  (define basic-duration (if basic-duration-match
+                           (* (/ 1.0 (string->number (first basic-duration-match))) 4)
+                           (unbox duration-box)))
+  (define dotted? (regexp-match #rx"\\.$" s))
+  (define duration (if dotted? (* basic-duration 1.5) basic-duration))
+  (list 'note note (unbox velocity-box) duration))
 
-; TODO: Add relative positioning pass.
-; TODO: Slow. Consider simplifying by parsing manually instead of defining.
+(define (alm-rest? s)
+  (regexp-match #rx"^[pr][0-9]*$" s))
+
+(define (alm-process-rest s duration-box)
+  (define basic-duration-match (regexp-match #rx"[0-9]+" s))
+  (define basic-duration (if basic-duration-match
+                            (* (/ 1.0 (string->number (first basic-duration-match))) 4)
+                            (unbox duration-box)))
+  (define dotted? (regexp-match #rx"\\.$" s))
+  (define duration (if dotted? (* basic-duration 1.5) basic-duration))
+  (list 'rest duration))
+
+(define (alm-duration? s)
+  (regexp-match #rx"^l[0-9]+$" s))
+
+(define (alm-process-duration s duration-box)
+  (define basic-duration-match (regexp-match #rx"[0-9]+" s))
+  (set-box! duration-box
+            (* (/ 1.0 (string->number (first basic-duration-match))) 4))
+  #f)
+
+(define (alm-velocity? s)
+  (regexp-match #rx"^v[0-9]+$" s))
+
+(define (alm-process-velocity s velocity-box)
+  (define basic-velocity-match (regexp-match #rx"[0-9]+" s))
+  (set-box! velocity-box (string->number (first basic-velocity-match)))
+  #f)
+
+(define (alm-octave-down? s)
+  (equal? s ">"))
+
+(define (alm-process-octave-down octave-box)
+  (set-box! octave-box (- (unbox octave-box) 1))
+  #f)
+
+(define (alm-octave-up? s)
+  (equal? s "<"))
+
+(define (alm-process-octave-up octave-box)
+  (set-box! octave-box (+ (unbox octave-box) 1))
+  #f)
+  
+(define (alm-octave? s)
+  (regexp-match #rx"^o[0-9]+$" s))
+
+(define (alm-process-octave s octave-box)
+  (define basic-octave-match (regexp-match #rx"[0-9]+" s))
+  (set-box! octave-box
+            (string->number (first basic-octave-match)))
+  #f)
+
+(define (alm-tie? s)
+  (equal? s "~"))
+
+(define (alm-identify n octave-box duration-box velocity-box)
+  (define s (symbol->string n))
+  (cond [(alm-note? s)
+         (alm-process-note s octave-box duration-box velocity-box)]
+        [(alm-rest? s)
+         (alm-process-rest s duration-box)]
+        [(alm-duration? s)
+         (alm-process-duration s duration-box)]
+        [(alm-velocity? s)
+         (alm-process-velocity s velocity-box)]
+        [(alm-tie? s)
+         '(tie)]
+        [(alm-octave-down? s)
+         (alm-process-octave-down octave-box)]
+        [(alm-octave-up? s)
+         (alm-process-octave-up octave-box)]
+        [(alm-octave? s)
+         (alm-process-octave s octave-box)]
+        [else
+         (error "Not an identifier!" s)]))
+
+(define (filter-falses elements)
+  (filter (λ (n) (not (false? n))) elements))
+
+(define (alm-identify-elements elements octave-box duration-box velocity-box)
+  (map (λ (n) (alm-identify n octave-box duration-box velocity-box)) elements))
+
+(define (alm-with-absolute-times elements time-box)
+  (map (λ (n)
+         (define kind (first n))
+         (if (or (equal? kind 'note) (equal? kind 'rest))
+             (let* ([t (last n)]
+                    [start-time (unbox time-box)]
+                    [end-time (+ start-time t)])
+               (define new-n (append n (list (list start-time end-time))))
+               (set-box! time-box end-time)
+               new-n)
+             n))
+       elements))
+
+(define (alm-preprocess-ties elements)
+  (for ([element elements]
+        [i (in-naturals)])
+    (let* ([has-prior? (> i 1)]
+           [has-previous? (> i 0)]
+           [has-next? (< i (- (length elements) 1))]
+           [has-after? (< i (- (length elements) 2))]
+           [previous-element (and has-previous?
+                                  (list-ref elements (- i 1)))]
+           [next-element (and has-next?
+                              (list-ref elements (+ i 1)))]
+           [previous-element-tie? (and previous-element
+                                       (equal? previous-element '(tie)))]
+           [next-element-tie? (and next-element
+                                   (equal? next-element '(tie)))]
+           [prior-element (and has-prior?
+                               previous-element-tie?
+                               (list-ref elements (- i 2)))]
+           [after-element (and has-after?
+                               next-element-tie?
+                               (list-ref elements (+ i 2)))])
+    (when (or (equal? prior-element '(tie))
+              (equal? after-element '(tie)))
+      (error "You can't have two ties in a row!"))
+    (let ([prior-note? (and prior-element
+                            (equal? 'note (first prior-element)))]
+          [after-note? (and after-element
+                            (equal? 'note (first after-element)))])
+      (when (equal? (first element) 'note)
+        (let* ([new-prior-element (and prior-note? (take prior-element 5))]
+               [new-after-element (and after-note? (take after-element 5))]
+               [linked-elements (list new-prior-element new-after-element)]
+               [new-element (append element (list linked-elements))])
+          (set! elements (list-set elements i new-element)))))))
+  elements)
+
+(define (alm-strip-ties elements)
+  (filter (λ (n) (not (equal? n '(tie)))) elements))
+
+(define (alm-generate-note-pairs elements)
+  (append-map
+    (λ (n)
+      (if (equal? (first n) 'note)
+          (let* ([new-note (take n 5)]
+                 [linked-elements (last n)]
+                 [prior-element (first linked-elements)]
+                 [after-element (last linked-elements)]
+                 [prior-element-n (and prior-element (list-ref prior-element 1))]
+                 [new-note-n (list-ref n 1)])
+            (list (and (not (equal? prior-element-n new-note-n))
+                       (append (list 'noteon) (drop new-note 1)))
+                  (and (not after-element)
+                       (append (list 'noteoff (list-ref new-note 1) 0)
+                               (drop new-note 3)))))
+          (list n)))
+    elements))
+
+(define (alm-parse body)
+  (define duration-box (box 1.0))
+  (define octave-box (box 3))
+  (define velocity-box (box 64))
+  (define time-box (box 0))
+  (~> body
+      (alm-identify-elements octave-box duration-box velocity-box)
+      (filter-falses)
+      (alm-with-absolute-times time-box)
+      (alm-preprocess-ties)
+      (alm-strip-ties)
+      (alm-generate-note-pairs)
+      (filter-falses)))
+
 (define-macro (alm . body)
-  `(let* ,defs
-    ,define-parse
-    ,define-handle-ties
-    (handle-ties (parse ,@body))))
+  `(alm-parse (quote ,body)))
