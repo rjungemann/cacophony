@@ -41,7 +41,7 @@
   (make-parameter #f))
 
 (define (engine-start!)
-  (define c (current-engine-proc))
+  (define c (unbox (current-engine-proc)))
   (when (not c)
     (set-box! (current-engine-proc) (engine-full-start! (current-engine-chuck)
                                                         (current-engine-chuck-port)
@@ -49,9 +49,9 @@
                                                         (current-engine-channel)))))
 
 (define (engine-stop!)
-  (define c (current-engine-proc))
+  (define c (unbox (current-engine-proc)))
   (when c
-    (engine-full-stop! (current-engine-proc) (current-engine-socket))
+    (engine-full-stop! c (current-engine-socket))
     (set-box! (current-engine-proc) #f))
   (void))
 
@@ -59,11 +59,11 @@
   (engine-full-receive! (current-engine-channel)))
 
 (define (engine-send! route . args)
-  (engine-full-send! (append (list (current-engine-socket)
-                                   (current-engine-host)
-                                   (current-engine-osc-port)
-                                   route)
-                             args))
+  (apply engine-full-send! (append (list (current-engine-socket)
+                                         (current-engine-host)
+                                         (current-engine-osc-port)
+                                         route)
+                                   args))
   (void))
 
 (define (register-shred! id path)
@@ -118,7 +118,7 @@
     (begin
       (engine-send! #"/machine/replace" id path)
       (let ([id (string->number (engine-receive!))])
-        (register-shred! id (string-join (append (list path) args) ":"))
+        (register-shred! id (string-join (append (list (bytes->string/utf-8 path)) args) ":"))
         id))
     (begin
       (p "File not found!")
