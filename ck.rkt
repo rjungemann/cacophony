@@ -101,7 +101,7 @@
 (define (ck-dec arg) (format "~a--" arg))
 (define (ck-not arg) (format "!~a" arg))
 (define (ck-positive arg) (format "+~a" arg))
-(define (ck-negate arg) (format "+~a" arg))
+(define (ck-negate arg) (format "-~a" arg))
 (define (ck-new arg) (format "new ~a" arg))
 
 ;; Control structures
