@@ -231,3 +231,4 @@ TODO...
 * Break out goodies into their own file
 * Timeout for engine calls
 * Move example into their own file
+* `next-beat` function for scheduling something to run on the next beat
