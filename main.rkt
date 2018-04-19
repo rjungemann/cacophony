@@ -29,12 +29,14 @@
          "utils.rkt"
          "dsl.rkt"
          "ck.rkt"
+         "alm.rkt"
          "engine-dsl.rkt"
          "fluid-dsl.rkt")
 
 (provide (all-from-out "utils.rkt")
          (all-from-out "dsl.rkt")
          (all-from-out "ck.rkt")
+         (all-from-out "alm.rkt")
          (all-from-out "engine-dsl.rkt")
          (all-from-out "fluid-dsl.rkt"))
 

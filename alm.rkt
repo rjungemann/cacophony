@@ -212,18 +212,3 @@
 
 (define-macro (alm . body)
   `(alm-parse (quote ,body)))
-
-#|
-(define (run-alm notes cb)
-  (for ([note notes])
-    (when (or (equal? (first note) 'noteon)
-              (equal? (first note) 'noteoff))
-      (after (last note) (λ (e) (cb e note))))))
-
-(define notes
-  (alm a4. > v10 b+2 < p4 a#4 l8 p v32 a ~ b ~ c o5 a-2 ~ a-4 c c+2. ~))
-
-(run-alm notes
-  (λ (_ n)
-    (fluid-send! 1 (first n) (second n))))
-|#

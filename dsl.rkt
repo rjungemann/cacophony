@@ -8,7 +8,8 @@
          "receiver.rkt"
          "sender.rkt"
          "socket.rkt"
-         "engine-dsl.rkt")
+         "engine-dsl.rkt"
+         "alm.rkt")
 
 (provide (all-defined-out))
 
@@ -398,3 +399,13 @@
 
 (define (markov-random m)
   (first (shuffle (markov-data m))))
+
+; ---
+; Alm
+; ---
+
+(define (alm-run notes cb)
+  (for ([note notes])
+    (when (or (equal? (first note) 'noteon)
+              (equal? (first note) 'noteoff))
+      (after (last note) (λ (e) (cb e note))))))
