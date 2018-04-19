@@ -212,7 +212,6 @@ TODO...
 * Environment variables
 * Break out goodies into their own file
 * Timeout for engine calls
-* Integrate ck-dsl
-* Move example in to their own file
+* Move example into their own file
 * Relative and absolute positions for Alm
 * Integrate Alm
