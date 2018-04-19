@@ -7,7 +7,7 @@
          alm-parse)
 
 (define (alm-note? s)
-  (regexp-match #rx"^[abcdefg][-+#]?[0-9]*\\.?$" s))
+  (and (string? s) (regexp-match #rx"^[abcdefg][-+#]?[0-9]*\\.?$" s)))
 
 (define note-offsets
   (hash "a" 0 "b" 2 "c" 3 "d" 5 "e" 7 "f" 8 "g" 10))
@@ -30,7 +30,7 @@
   (list 'note note (unbox velocity-box) duration))
 
 (define (alm-rest? s)
-  (regexp-match #rx"^[pr][0-9]*$" s))
+  (and (string? s) (regexp-match #rx"^[pr][0-9]*$" s)))
 
 (define (alm-process-rest s duration-box)
   (define basic-duration-match (regexp-match #rx"[0-9]+" s))
@@ -42,7 +42,7 @@
   (list 'rest duration))
 
 (define (alm-duration? s)
-  (regexp-match #rx"^l[0-9]+$" s))
+  (and (string? s) (regexp-match #rx"^l[0-9]+$" s)))
 
 (define (alm-process-duration s duration-box)
   (define basic-duration-match (regexp-match #rx"[0-9]+" s))
@@ -51,7 +51,7 @@
   #f)
 
 (define (alm-velocity? s)
-  (regexp-match #rx"^v[0-9]+$" s))
+  (and (string? s) (regexp-match #rx"^v[0-9]+$" s)))
 
 (define (alm-process-velocity s velocity-box)
   (define basic-velocity-match (regexp-match #rx"[0-9]+" s))
@@ -71,9 +71,9 @@
 (define (alm-process-octave-up octave-box)
   (set-box! octave-box (+ (unbox octave-box) 1))
   #f)
-  
+
 (define (alm-octave? s)
-  (regexp-match #rx"^o[0-9]+$" s))
+  (and (string? s) (regexp-match #rx"^o[0-9]+$" s)))
 
 (define (alm-process-octave s octave-box)
   (define basic-octave-match (regexp-match #rx"[0-9]+" s))
@@ -85,7 +85,7 @@
   (equal? s "~"))
 
 (define (alm-identify n octave-box duration-box velocity-box)
-  (define s (symbol->string n))
+  (define s (and (symbol? n) (symbol->string n)))
   (cond [(alm-note? s)
          (alm-process-note s octave-box duration-box velocity-box)]
         [(alm-rest? s)
@@ -103,7 +103,7 @@
         [(alm-octave? s)
          (alm-process-octave s octave-box)]
         [else
-         (error "Not an identifier!" s)]))
+         n]))
 
 (define (filter-falses elements)
   (filter (λ (n) (not (false? n))) elements))
@@ -124,6 +124,19 @@
              n))
        elements))
 
+(define (alm-validate elements)
+  (for ([current elements]
+        [i (in-naturals)])
+    (let ([previous (and (> i 0) (list-ref elements (- i 1)))]
+          [next (and (< i (- (length elements) 1)) (list-ref elements (+ i 1)))])
+      (when (and (equal? current '(tie)) (equal? next '(tie)))
+        (error "Can't have two ties in a row!"))
+      (when (and (not (and (list? previous) (equal? (first previous) 'note)))
+                 (equal? current '(tie))
+                 (not (and (list? next) (equal? (first next) 'note))))
+        (error "A tie must have a note before and after!"))))
+  elements)
+
 (define (alm-preprocess-ties elements)
   (for ([element elements]
         [i (in-naturals)])
@@ -131,27 +144,14 @@
            [has-previous? (> i 0)]
            [has-next? (< i (- (length elements) 1))]
            [has-after? (< i (- (length elements) 2))]
-           [previous-element (and has-previous?
-                                  (list-ref elements (- i 1)))]
-           [next-element (and has-next?
-                              (list-ref elements (+ i 1)))]
-           [previous-element-tie? (and previous-element
-                                       (equal? previous-element '(tie)))]
-           [next-element-tie? (and next-element
-                                   (equal? next-element '(tie)))]
-           [prior-element (and has-prior?
-                               previous-element-tie?
-                               (list-ref elements (- i 2)))]
-           [after-element (and has-after?
-                               next-element-tie?
-                               (list-ref elements (+ i 2)))])
-    (when (or (equal? prior-element '(tie))
-              (equal? after-element '(tie)))
-      (error "You can't have two ties in a row!"))
-    (let ([prior-note? (and prior-element
-                            (equal? 'note (first prior-element)))]
-          [after-note? (and after-element
-                            (equal? 'note (first after-element)))])
+           [previous-element (and has-previous?  (list-ref elements (- i 1)))]
+           [next-element (and has-next?  (list-ref elements (+ i 1)))]
+           [previous-element-tie? (and previous-element (equal? previous-element '(tie)))]
+           [next-element-tie? (and next-element (equal? next-element '(tie)))]
+           [prior-element (and has-prior? previous-element-tie? (list-ref elements (- i 2)))]
+           [after-element (and has-after? next-element-tie?  (list-ref elements (+ i 2)))])
+    (let ([prior-note? (and prior-element (equal? 'note (first prior-element)))]
+          [after-note? (and after-element (equal? 'note (first after-element)))])
       (when (equal? (first element) 'note)
         (let* ([new-prior-element (and prior-note? (take prior-element 5))]
                [new-after-element (and after-note? (take after-element 5))]
@@ -204,6 +204,7 @@
       (alm-identify-elements octave-box duration-box velocity-box)
       (filter-falses)
       (alm-with-absolute-times time-box)
+      (alm-validate)
       (alm-preprocess-ties)
       (alm-strip-ties)
       (alm-generate-note-pairs)
