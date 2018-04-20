@@ -1,8 +1,7 @@
 #lang racket
 
-(require rx/event-emitter)
-
 (provide
+  (struct-out event-emitter)
   (struct-out clock)
   (struct-out clock-event)
   now
@@ -20,6 +19,25 @@
   clock-after!
   clock-every!
   clock-clear!)
+
+(struct event-emitter (listeners))
+
+(define (make-event-emitter)
+  (event-emitter (mutable-set)))
+
+(define (trigger evt . args)
+  (define l (set->list (event-emitter-listeners evt)))
+  (for ([callback l])
+    (apply callback args)))
+
+(define (add-listener! evt callback)
+  (set-add! (event-emitter-listeners evt) callback))
+
+(define (remove-listener! evt callback)
+  (set-remove! (event-emitter-listeners evt) callback))
+
+(define (clear-listeners! evt)
+  (set-clear! (event-emitter-listeners evt)))
 
 (struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent] #:mutable)
 (struct clock-event [clock t])
@@ -52,10 +70,9 @@
   (clock-tick-tick! c t)
   (define since (- t (clock-previous-at c)))
   (define every-ms (ppqn->ms (clock-bpm c) (clock-ppqn c)))
-  (and (<= every-ms since)
-       (begin
-         (clock-pulse-tick! c t)
-         (set-clock-previous-at! c t))))
+  (when (<= every-ms since)
+    (clock-pulse-tick! c t)
+    (set-clock-previous-at! c t)))
 
 (define (clock-start! c)
   (set-clock-started-at! c (now))
@@ -66,23 +83,20 @@
   (set-clock-running?! c #f))
 
 (define (clock-at! c t cb)
-  (add-listener!
-    (clock-tick-vent c)
-    (λ (e)
-      (and (<= (clock-event-t e) t)
-           (begin
-             (cb e)
-             (remove-listener! (clock-tick-vent (clock-event-clock e)) cb))))))
+  (define (listener e)
+    (when (<= (clock-event-t e) t)
+      (cb e)
+      (remove-listener! (clock-tick-vent (clock-event-clock e)) listener)))
+  (add-listener! (clock-tick-vent c) listener))
 
 ; NOTE: Uses `beat` and `pulse` as args instead of `pulses`!
+; NOTE: Broken!
 (define (clock-on! c beat pulse cb)
   (define (new-cb e)
     (define c (clock-event-clock e))
-    (and (<= (clock-beat c) beat)
-         (<= (clock-pulse c) pulse)
-         (begin
-           (cb e)
-           (remove-listener! (clock-pulse-vent c) cb))))
+    (when (and (<= (clock-beat c) beat) (<= (clock-pulse c) pulse))
+      (cb e)
+      (remove-listener! (clock-pulse-vent c) cb)))
   (add-listener! (clock-pulse-vent c) new-cb)
   new-cb)
 
@@ -106,11 +120,10 @@
     (define beat (floor (/ pulses ppqn)))
     (define pulse (modulo pulses ppqn))
     (define pulse-offset (+ (* beat ppqn) pulse))
-    (and (<= (+ previous-pulses pulse-offset) current-pulses)
-         (begin
-           (cb e)
-           (set! previous-beat bpm)
-           (set! previous-pulse (clock-pulse c)))))
+    (when (<= (+ previous-pulses pulse-offset) current-pulses)
+      (cb e)
+      (set! previous-beat bpm)
+      (set! previous-pulse (clock-pulse c))))
   (add-listener! (clock-pulse-vent c) new-cb)
   new-cb)
 

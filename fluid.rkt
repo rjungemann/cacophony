@@ -22,9 +22,12 @@
           (printf (color "[fluidsynth] ~a\n") line)
           (loop))))))
 
-(define (fluid-full-start! fluidsynth-path soundfont-path)
+(define (fluid-full-start! fluidsynth-path fluid-args soundfont-path)
   (define-values (p o i e)
-    (apply subprocess (list #f #f #f fluidsynth-path soundfont-path)))
+    (apply subprocess (append (list #f #f #f
+                                    fluidsynth-path)
+                              fluid-args
+                              (list soundfont-path))))
   (define oth (thread-output-handler o cyan))
   (define eth (thread-output-handler e yellow))
   (fluid-proc p o i e oth eth))

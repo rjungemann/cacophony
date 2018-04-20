@@ -4,6 +4,7 @@
          "engine.rkt")
 
 (provide current-engine-chuck
+         current-engine-chuck-args
          current-engine-chuck-port
          current-engine-osc-port
          current-engine-socket
@@ -20,7 +21,16 @@
          engine-unshredule)
 
 (define current-engine-chuck
-  (make-parameter "/usr/local/bin/chuck"))
+  (make-parameter
+    (or (environment-variables-ref (current-environment-variables) #"CHUCK_PATH")
+        "/usr/local/bin/chuck")))
+
+(define current-engine-chuck-args
+  (make-parameter
+    (string-split
+      (or (environment-variables-ref (current-environment-variables) #"CHUCK_ARGS")
+          "")
+      ";")))
 
 (define current-engine-chuck-port
   (make-parameter #f))
@@ -44,6 +54,7 @@
   (define c (unbox (current-engine-proc)))
   (when (not c)
     (set-box! (current-engine-proc) (engine-full-start! (current-engine-chuck)
+                                                        (current-engine-chuck-args)
                                                         (current-engine-chuck-port)
                                                         (current-engine-osc-port)
                                                         (current-engine-channel)))))

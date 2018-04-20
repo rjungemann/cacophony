@@ -173,8 +173,21 @@
 (define (defer cb)
   (clock-at! (current-clock) (now) cb))
 
+(define (on beat pulse cb)
+  (clock-after! (current-clock) beat pulse cb))
+
 (define (after beats cb)
   (clock-after! (current-clock) beats cb))
+
+; TODO: Test this
+; NOTE: Broken!
+(define (.. cb)
+  (define c (current-clock))
+  (define remaining-pulses (- (clock-ppqn c) (clock-pulse c)))
+  (define next-ms (+ (now) (ppqn->ms (clock-bpm c) remaining-pulses)))
+  (displayln (list (ppqn->ms (clock-bpm c) remaining-pulses)))
+  (displayln (list remaining-pulses (now) next-ms))
+  (clock-at! c next-ms cb))
 
 (define (every beats cb)
   (clock-every! (current-clock) beats cb))
@@ -249,7 +262,8 @@
   (p "Socket port ~a" (socket-port))
   (p "Running? ~a" (unbox (current-stopper)))
   (p "BPM ~a" (clock-bpm (current-clock)))
-  (p "PPQN ~a" (clock-ppqn (current-clock))))
+  (p "PPQN ~a" (clock-ppqn (current-clock)))
+  (p "Beats/Pulses ~a ~a" (beats) (pulses)))
 
 (define stats-vector (make-vector 12))
 (define stats-names (list 'current-process-milliseconds

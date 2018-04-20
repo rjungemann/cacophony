@@ -82,16 +82,17 @@
           (thread-line-handler ch color line)
           (loop))))))
 
-(define (engine-full-start! chuck chuck-port osc-port ch)
+(define (engine-full-start! chuck chuck-args chuck-port osc-port ch)
   (define c #f)
   (tempfile
     engine-code
     (λ (path)
       (define-values (p o i e)
-        (apply subprocess (list #f #f #f
-                                chuck
-                                (format "--port ~a" chuck-port)
-                                (format "~a:~a" path osc-port))))
+        (apply subprocess (append (list #f #f #f
+                                        chuck
+                                        (format "--port ~a" chuck-port)
+                                        (format "~a:~a" path osc-port))
+                                  (or chuck-args '()))))
       (define oth (thread-output-handler ch o blue))
       (define eth (thread-output-handler ch e yellow))
       (engine-full-receive! ch) ; Wait for first message from chuck.

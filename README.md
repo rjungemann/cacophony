@@ -104,6 +104,17 @@ Then:
     (<< s #"/lead" (lead))))
 ```
 
+Quantizing events to next beat:
+
+```racket
+(start)
+(set-bpm 60)
+(every (4n) (λ (_) (p "Tick")))
+(after (4n) (λ (_) (p "...")))
+(.. (λ (_) (p "...")))
+(.. (λ (_) (every (4n) (λ (_) (p "Tick 2")))))
+```
+
 Dynamically scaling BPM with linear interpolation.
 
 ```racket
@@ -223,11 +234,18 @@ TODO...
 
 TODO...
 
+## Environment variables
+
+* `CHUCK_PATH`
+* `CHUCK_ARGS` (semicolon-delimited)
+* `FLUIDSYNTH_PATH`
+* `FLUIDSYNTH_ARGS` (semicolon-delimited)
+* `FLUIDSYNTH_SOUNDFONT_PATH`
+
 ## TODO
 
 * Tests
 * Docs
-* Environment variables
 * Break out goodies into their own file
 * Timeout for engine calls
 * Move example into their own file
@@ -235,3 +253,4 @@ TODO...
 * Integrate wavetable, subtr, and rec
 * Some simplified interface for defining synths and samplers
 * Register shreds shortcut for `(tempfile (ck ...))`
+* Smooth out DSLs

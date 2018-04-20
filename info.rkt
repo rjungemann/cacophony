@@ -2,7 +2,6 @@
 (define collection "cacophony")
 (define deps '("base"
                "rackunit-lib"
-               "rx"
                "osc"
                "unix-signals"
                "threading"))

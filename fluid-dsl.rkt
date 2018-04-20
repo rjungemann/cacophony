@@ -3,6 +3,7 @@
 (require "fluid.rkt")
 
 (provide current-fluid-fluidsynth-path
+         current-fluid-args
          current-fluid-soundfont-path
          current-fluid-proc
          fluid-start!
@@ -11,10 +12,21 @@
          fluid-flush!)
 
 (define current-fluid-fluidsynth-path
-  (make-parameter "/usr/local/bin/fluidsynth"))
+  (make-parameter
+    (or (environment-variables-ref (current-environment-variables) #"FLUIDSYNTH_PATH")
+        "/usr/local/bin/fluidsynth")))
+
+(define current-fluid-args
+  (make-parameter
+    (string-split
+      (or (environment-variables-ref (current-environment-variables) #"FLUIDSYNTH_ARGS")
+          "")
+      ";")))
 
 (define current-fluid-soundfont-path
-  (make-parameter "examples/GeneralUser GS v1.471.sf2"))
+  (make-parameter
+    (or (environment-variables-ref (current-environment-variables) #"FLUIDSYNTH_SOUNDFONT_PATH")
+        "examples/GeneralUser GS v1.471.sf2")))
 
 (define current-fluid-proc
   (make-parameter (box #f)))
@@ -24,6 +36,7 @@
   (when (not f)
     (set-box! (current-fluid-proc)
               (fluid-full-start! (current-fluid-fluidsynth-path)
+                                 (current-fluid-args)
                                  (current-fluid-soundfont-path)))))
 
 (define (fluid-stop!)
