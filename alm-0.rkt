@@ -3,8 +3,8 @@
 (require compatibility/defmacro
          threading)
 
-(provide alm
-         alm-parse)
+(provide alm-0
+         alm-0-parse)
 
 (define (alm-note? s)
   (and (string? s) (regexp-match #rx"^[abcdefg][-+#]?[0-9]*\\.?$" s)))
@@ -195,7 +195,7 @@
         n]))
     elements))
 
-(define (alm-parse body)
+(define (alm-0-parse body)
   (define duration-box (box 1.0))
   (define octave-box (box 3))
   (define velocity-box (box 64))
@@ -211,5 +211,5 @@
       (filter-falses)
       (alm-fix-absolute-times)))
 
-(define-macro (alm . body)
+(define-macro (alm-0 . body)
   `(alm-parse (quote ,body)))
