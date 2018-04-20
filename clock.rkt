@@ -1,7 +1,8 @@
 #lang racket
 
+(require "events.rkt")
+
 (provide
-  (struct-out event-emitter)
   (struct-out clock)
   (struct-out clock-event)
   now
@@ -20,25 +21,6 @@
   clock-next-beat!
   clock-every!
   clock-clear!)
-
-(struct event-emitter (listeners))
-
-(define (make-event-emitter)
-  (event-emitter (mutable-set)))
-
-(define (trigger evt . args)
-  (define l (set->list (event-emitter-listeners evt)))
-  (for ([callback l])
-    (apply callback args)))
-
-(define (add-listener! evt callback)
-  (set-add! (event-emitter-listeners evt) callback))
-
-(define (remove-listener! evt callback)
-  (set-remove! (event-emitter-listeners evt) callback))
-
-(define (clear-listeners! evt)
-  (set-clear! (event-emitter-listeners evt)))
 
 (struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent beat-vent] #:mutable)
 (struct clock-event [clock t])
