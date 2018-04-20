@@ -17,6 +17,7 @@
   clock-at!
   clock-on!
   clock-after!
+  clock-next-beat!
   clock-every!
   clock-clear!)
 
@@ -39,7 +40,7 @@
 (define (clear-listeners! evt)
   (set-clear! (event-emitter-listeners evt)))
 
-(struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent] #:mutable)
+(struct clock [bpm ppqn beat pulse started-at previous-at running? tick-vent pulse-vent beat-vent] #:mutable)
 (struct clock-event [clock t])
 
 (define (now) (current-inexact-milliseconds))
@@ -47,7 +48,7 @@
 (define (ppqn->ms bpm ppqn) (/ (/ 60000.0 bpm) ppqn))
 
 (define (make-clock bpm ppqn)
-  (clock bpm ppqn 0 0 -1 -1 #f (make-event-emitter) (make-event-emitter)))
+  (clock bpm ppqn 0 0 -1 -1 #f (make-event-emitter) (make-event-emitter) (make-event-emitter)))
 
 (define (make-clock-event c t)
   (clock-event c t))
@@ -56,6 +57,8 @@
   (define beat (clock-beat c))
   (define pulse (clock-pulse c))
   (trigger (clock-pulse-vent c) (make-clock-event c t))
+  (when (= 0 pulse)
+    (trigger (clock-beat-vent c) (make-clock-event c t)))
   (define raw-new-pulse (+ pulse 1))
   (define new-pulse (modulo raw-new-pulse (clock-ppqn c)))
   (define new-beat (+ beat (floor (/ raw-new-pulse (clock-ppqn c)))))
@@ -89,24 +92,33 @@
       (remove-listener! (clock-tick-vent (clock-event-clock e)) listener)))
   (add-listener! (clock-tick-vent c) listener))
 
-; NOTE: Uses `beat` and `pulse` as args instead of `pulses`!
-; NOTE: Broken!
-(define (clock-on! c beat pulse cb)
+; TODO: Verify this!
+(define (clock-on! c beats cb)
   (define (new-cb e)
     (define c (clock-event-clock e))
-    (when (and (<= (clock-beat c) beat) (<= (clock-pulse c) pulse))
+    (define ppqn (clock-ppqn c))
+    (define current-beat (clock-beat c))
+    (define current-pulse (clock-pulse c))
+    (define current-beats (+ current-beat (/ current-pulse ppqn)))
+    (when (<= current-beats beats)
       (cb e)
       (remove-listener! (clock-pulse-vent c) cb)))
   (add-listener! (clock-pulse-vent c) new-cb)
   new-cb)
 
+; TODO: Verify this!
 (define (clock-after! c beats cb)
-  (define pulses (* beats (clock-ppqn c)))
-  (define beat (floor (/ pulses (clock-ppqn c))))
-  (define pulse (modulo pulses (clock-ppqn c)))
+  (define ppqn (clock-ppqn c))
   (define current-beat (clock-beat c))
   (define current-pulse (clock-pulse c))
-  (clock-on! c (+ current-beat beat) (+ current-pulse pulse) cb))
+  (define current-beats (+ current-beat (/ current-pulse ppqn)))
+  (clock-on! c (+ beats current-beats) cb))
+
+(define (clock-next-beat! c cb)
+  (define (listener e)
+    (cb e)
+    (remove-listener! (clock-beat-vent (clock-event-clock e)) listener))
+  (add-listener! (clock-beat-vent c) listener))
 
 (define (clock-every! c beats cb)
   (define previous-beat (clock-beat c))

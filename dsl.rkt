@@ -179,15 +179,8 @@
 (define (after beats cb)
   (clock-after! (current-clock) beats cb))
 
-; TODO: Test this
-; NOTE: Broken!
 (define (.. cb)
-  (define c (current-clock))
-  (define remaining-pulses (- (clock-ppqn c) (clock-pulse c)))
-  (define next-ms (+ (now) (ppqn->ms (clock-bpm c) remaining-pulses)))
-  (displayln (list (ppqn->ms (clock-bpm c) remaining-pulses)))
-  (displayln (list remaining-pulses (now) next-ms))
-  (clock-at! c next-ms cb))
+  (clock-next-beat! (current-clock) cb))
 
 (define (every beats cb)
   (clock-every! (current-clock) beats cb))
