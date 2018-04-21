@@ -61,7 +61,7 @@ Then:
 
 ; Schedule some events to be run every 2.5 beats and every beat.
 (every (+ (2n) (8n)) (p "Every 2.5 beats"))
-(every (4n) (p "Every beat\n"))
+(every (4n) (p "Every beat"))
 
 ; Wait for a response.
 (>> r #"/status" (λ (m) (p "Received ~a" m)))
@@ -164,14 +164,27 @@ Markov melodies. Try it with rhythms too!
 Managing ChucK:
 
 ```racket
+; Start ChucK.
 (engine-start!)
+
+; Get info about it.
 (engine-info)
 
+; Common operations.
 (p "~a" (engine-shredule #"examples/sample.ck"))
 (p "~a" (engine-replace 2 #"examples/sample.ck"))
 (p "~a" (engine-shreds))
 (p "~a" (engine-unshredule 2))
 
+; Load some pre-defined code and verify.
+(engine-wavetable)
+(engine-shredule-code (ck (<<<>>> 'Foo)))
+
+; Some other pre-defined code that you can try.
+(engine-subtr)
+(engine-rec "foo.wav")
+
+; Tell ChucK to quit nicely and then stop it.
 (engine-quit)
 (engine-stop!)
 ```

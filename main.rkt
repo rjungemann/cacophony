@@ -1,4 +1,4 @@
-#lang racket/base
+#lang racket
 
 (module+ test
   (require rackunit))

@@ -7,7 +7,7 @@
   (define o (open-output-file path #:mode 'text #:exists 'truncate))
   (display code o)
   (close-output-port o)
-  (cb path)
+  (cb (path->bytes path))
   (delete-file path)
   (void))
 

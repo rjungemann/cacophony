@@ -1,7 +1,8 @@
 #lang racket
 
 (require "utils.rkt"
-         "engine.rkt")
+         "engine.rkt"
+         "ck.rkt")
 
 (provide current-engine-chuck
          current-engine-chuck-args
@@ -18,7 +19,11 @@
          engine-shredule
          engine-replace
          engine-shreds
-         engine-unshredule)
+         engine-unshredule
+         engine-shredule-code
+         engine-wavetable
+         engine-subtr
+         engine-rec)
 
 (define current-engine-chuck
   (make-parameter
@@ -147,3 +152,120 @@
   (p "PID ~a" (subprocess-pid (engine-proc-p (unbox (current-engine-proc)))))
   (p "TCP port ~a" (current-engine-chuck-port))
   (p "OSC port ~a" (current-engine-osc-port)))
+
+; -----------
+; Chuck Stuff
+; -----------
+
+(define wavetable-code
+  (ck
+    (public-class 'Wavetable 'Chugen
+      (array-@-decl 'SndBuf 'buffers)
+      (=> (float 0.0)
+          (decl 'float 'interp))
+      (fun 'float 'tick (list (decl 'float 'in))
+        (=> (* 'interp (- (ref-call 'buffers 'size) (int 1)))
+            (decl 'float 'interpolation))
+        (=> (cast (ref-call 'Math 'floor 'interpolation) 'int)
+            (decl 'int 'lowI))
+        (=> (cast (+ 'lowI (int 1)) 'int)
+            (decl 'int 'highI))
+        (=> (- (* (- 'highI 'interpolation) (float 2.0)) (float 1.0))
+            (decl 'float 'swing))
+        (=> (ref-call 'Math 'sqrt (* (float 0.5) (+ (float 1.0) 'swing)))
+            (decl 'float 'lowPercent))
+        (=> (ref-call 'Math 'sqrt (* (float 0.5) (- (float 1.0) 'swing)))
+            (decl 'float 'highPercent))
+        (@=> (array-ref 'buffers 'lowI) (@-decl 'SndBuf 'low))
+        (@=> (array-ref 'buffers 'highI) (@-decl 'SndBuf 'high))
+        (=> (cast (* 'in (ref-call 'low 'samples)) 'int)
+            (decl 'int 'lowSampleI))
+        (=> (cast (* 'in (ref-call 'high 'samples)) 'int)
+            (decl 'int 'highSampleI))
+        (=> (ref-call 'low 'valueAt 'lowSampleI)
+            (decl 'float 'lowValue))
+        (=> (ref-call 'high 'valueAt 'highSampleI)
+            (decl 'float 'highValue))
+        (return (+ (* 'lowValue 'lowPercent) (* 'highValue 'highPercent)))))))
+
+(define rec-code
+  (ck
+    (=> (ref-call 'me 'arg (int 0))
+        (decl 'string 'filename))
+    (if (equal? (ref-call 'filename 'length) 0)
+      (=> (string "foo.wav")
+          'filename))
+    (=> dac
+        (decl 'Gain 'g)
+        (decl 'WvOut 'w)
+        blackhole)
+    (=> 'filename
+        (ref 'w 'wavFilename))
+    (<<<>>> (string "Writing to file:")
+            (+ (string "'") (ref-call 'w 'filename) (string "'")))
+    (=> (float 0.5)
+        (ref 'g 'gain))
+    (@=> null 'w)
+    (while true
+      (=> (dur (int 1) second) now))))
+
+(define subtr-code
+  (ck
+    (public-class 'Subtr 'Chubgraph
+      (decl 'float 'spread)
+      (decl 'float 'filtermult)
+      (decl 'float 'filteroffset)
+      (decl 'SndBuf 'shape1)
+      (decl 'SndBuf 'shape2)
+      (decl 'Gain 'oscgain1)
+      (decl 'Gain 'oscgain2)
+      (decl 'ADSR 'ampenv)
+      (decl 'ADSR 'filterenv)
+      (decl 'LPF 'lpf)
+      (=> inlet 'shape1 'oscgain1 'lpf)
+      (=> inlet 'shape2 'oscgain2 'lpf)
+      (=> 'lpf 'ampenv outlet)
+      (=> (float 0.07) 'spread)
+      (=> (int 1) (ref 'shape1 'loop))
+      (=> (int 1) (ref 'shape2 'loop))
+      (=> (float 0.5) (ref 'oscgain1 'gain))
+      (=> (float 0.5) (ref 'oscgain2 'gain))
+      (=> (float 1500.0) 'filtermult)
+      (=> (float 200.0) 'filteroffset)
+      (fun 'void 'read (list (decl 'string 's))
+        (=> 's (ref 'shape1 'read))
+        (=> 's (ref 'shape2 'read)))
+      (fun 'void 'freq (list (decl 'float 'f))
+        (=> 'f (ref 'Std 'ftom) (decl 'float 'm))
+        (=> (+ 'm 'spread) (ref 'Std 'mtof) (ref 'shape1 'freq))
+        (=> (- 'm 'spread) (ref 'Std 'mtof) (ref 'shape2 'freq)))
+      (fun 'void 'keyOn '()
+        (ref-call 'filterenv 'keyOn)
+        (ref-call 'ampenv 'keyOn))
+      (fun 'void 'keyOff '()
+        (ref-call 'filterenv 'keyOff)
+        (ref-call 'ampenv 'keyOff))
+      (fun 'void 'envdrive '()
+        (while true
+          (=> (+ (* (ref-call 'filterenv 'last) 'filtermult) 'filteroffset)
+              (ref 'lpf 'freq))
+          (=> (dur 1 ms) now)))
+      (spork (call 'envdrive)))))
+
+(define (engine-shredule-code code . args)
+  (tempfile
+    code
+    (λ (path)
+      (engine-shredule (string->bytes/utf-8 (string-join (append (list (bytes->string/utf-8 path))
+                                                                 args)
+                                                         ":"))))))
+
+(define (engine-wavetable)
+  (engine-shredule-code wavetable-code))
+
+(define (engine-subtr)
+  (engine-shredule-code subtr-code))
+
+(define (engine-rec filename)
+  (engine-shredule-code rec-code filename))
+

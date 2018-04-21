@@ -89,14 +89,22 @@
     'dac]
    [blackhole
     'blackhole]
+   [inlet
+    'inlet]
+   [outlet
+    'outlet]
    ;; Classes
    ; TODO: Verify this.
    [class
-    (λ (name attr extends . body)
-      (define baked-attr (if attr (format "~a " attr) ""))
+    (λ (name extends . body)
       (define baked-extends (if extends (format " extends ~a" extends) ""))
       (define baked-body (apply do body))
-      (format "~a~a ~a~a {\n~a\n}" baked-attr "class" name baked-extends baked-body))]
+      (format "class ~a~a {\n~a\n}" name baked-extends baked-body))]
+   [public-class
+    (λ (name extends . body)
+      (define baked-extends (if extends (format " extends ~a" extends) ""))
+      (define baked-body (apply do body))
+      (format "public class ~a~a {\n~a\n}" name baked-extends baked-body))]
    [ref
     (λ (name key)
       (format "~a.~a" name key))]
@@ -111,16 +119,31 @@
       (format "<<< ~a >>>" (apply exprs args)))]
    [oper
     (λ (op . args)
-      (string-join (map (λ (n) (format "~a" n)) args) (format " ~a " op)))]
+      (format "(~a)" (string-join (map (λ (n) (format "~a" n)) args) (format " ~a " op))))]
    [decl
     (λ (t name)
       (format "~a ~a" t name))]
    [static-decl
     (λ (t name)
       (format "static ~a ~a" t name))]
+   [@-decl
+    (λ (t name)
+      (format "~a @ ~a" t name))]
+   [static-@-decl
+    (λ (t name)
+      (format "static ~a @ ~a" t name))]
    [array-decl
     (λ (t name)
       (format "~a ~a[]" t name))]
+   [array-static-decl
+    (λ (t name)
+      (format "static ~a ~a[]" t name))]
+   [array-@-decl
+    (λ (t name)
+      (format "~a @ ~a[]" t name))]
+   [array-static-@-decl
+    (λ (t name)
+      (format "static ~a @ ~a[]" t name))]
    [fun
     (λ (t name params . body)
       (format "fun ~a ~a (~a) {\n~a\n}" t name (apply exprs params) (apply do body)))]

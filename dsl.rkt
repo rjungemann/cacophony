@@ -9,6 +9,7 @@
          "receiver.rkt"
          "sender.rkt"
          "socket.rkt"
+         "ck.rkt"
          "engine-dsl.rkt"
          "alm.rkt")
 
@@ -178,10 +179,10 @@
   `(clock-next-beat! (current-clock) (λ (_) ,@body)))
 
 (define-macro (after beats . body)
-  `(clock-after! (current-clock) beats (λ (_) ,@body)))
+  `(clock-after! (current-clock) ,beats (λ (_) ,@body)))
 
 (define-macro (every beats . body)
-  `(clock-every! (current-clock) beats (λ (_) ,@body)))
+  `(clock-every! (current-clock) ,beats (λ (_) ,@body)))
 
 (define (<< s route . args)
   (sender-send! s (osc-message route args))
