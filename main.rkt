@@ -28,6 +28,7 @@
          osc
          threading
          "utils.rkt"
+         "clock.rkt"
          "dsl.rkt"
          "ck.rkt"
          "alm.rkt"
@@ -36,6 +37,7 @@
 
 (provide (all-from-out threading)
          (all-from-out "utils.rkt")
+         (all-from-out "clock.rkt")
          (all-from-out "dsl.rkt")
          (all-from-out "ck.rkt")
          (all-from-out "alm.rkt")

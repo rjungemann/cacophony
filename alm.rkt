@@ -4,7 +4,8 @@
          threading)
 
 (provide alm
-         alm-parse)
+         alm-parse
+         a)
 
 (define (alm-note? s)
   (and (string? s) (regexp-match #rx"^[abcdefg][-+#]?[0-9]*\\.?$" s)))
@@ -213,3 +214,6 @@
 
 (define-macro (alm . body)
   `(alm-parse (quote ,body)))
+
+(define (a body)
+  (alm-parse body))

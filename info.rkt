@@ -4,7 +4,8 @@
                "rackunit-lib"
                "osc"
                "unix-signals"
-               "threading"))
+               "threading"
+               "scribble"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/cacophony.scrbl" ())))
 (define pkg-desc "Description Here")

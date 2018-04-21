@@ -1,6 +1,7 @@
 #lang racket
 
-(require osc
+(require compatibility/defmacro
+         osc
          rx/event-emitter
          unix-signals
          "utils.rkt"
@@ -170,20 +171,17 @@
         ; And go!
         (read-eval-print-loop)))))
 
-(define (defer cb)
-  (clock-at! (current-clock) (now) cb))
+(define-macro (defer . body)
+  `(clock-at! (current-clock) (now) (λ (_) ,@body)))
 
-(define (on beat pulse cb)
-  (clock-after! (current-clock) beat pulse cb))
+(define-macro (next . body)
+  `(clock-next-beat! (current-clock) (λ (_) ,@body)))
 
-(define (after beats cb)
-  (clock-after! (current-clock) beats cb))
+(define-macro (after beats . body)
+  `(clock-after! (current-clock) beats (λ (_) ,@body)))
 
-(define (.. cb)
-  (clock-next-beat! (current-clock) cb))
-
-(define (every beats cb)
-  (clock-every! (current-clock) beats cb))
+(define-macro (every beats . body)
+  `(clock-every! (current-clock) beats (λ (_) ,@body)))
 
 (define (<< s route . args)
   (sender-send! s (osc-message route args))

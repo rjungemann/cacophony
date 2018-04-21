@@ -18,7 +18,7 @@ brew install rlwrap chuck
 # Install dependencies.
 raco setup
 # Or...
-yes | raco pkg install --skip-installed rx osc scribble
+yes | raco pkg install --skip-installed rackunit-lib osc unix-signals threading scribble
 
 # Try running.
 racket racket.rkt
@@ -57,11 +57,11 @@ Then:
 (define s (add-sender "127.0.0.1" 13698))
 
 ; Schedule an event to be run next tick.
-(defer (λ (_) (p "Now starting!n")))
+(defer (p "Now starting!\n"))
 
 ; Schedule some events to be run every 2.5 beats and every beat.
-(every (+ (2n) (8n)) (λ (_) (p "Every 2.5 beats")))
-(every (4n) (λ (_) (p "Every beat\n")))
+(every (+ (2n) (8n)) (p "Every 2.5 beats"))
+(every (4n) (p "Every beat\n"))
 
 ; Wait for a response.
 (>> r #"/status" (λ (m) (p "Received ~a" m)))
@@ -91,28 +91,15 @@ Then:
 ; Schedule the drums.
 (define snare? (rotator (list #f #t)))
 (every (4n)
-  (λ (_)
-    (<< s #"/bass-drum")
-    (and (snare?) (<< s #"/snare-drum")) ))
+  (<< s #"/bass-drum")
+  (and (snare?) (<< s #"/snare-drum")) )
 
 ; Schedule the bass and lead.
 (define bass (rotator '(24 24 27 24 34 36 22)))
 (define lead (rotator '(48 50 51 48 50 46 53)))
 (every (8n)
-  (λ (_)
-    (<< s #"/bass" (bass))
-    (<< s #"/lead" (lead))))
-```
-
-Quantizing events to next beat:
-
-```racket
-(start)
-(set-bpm 60)
-(every (4n) (λ (_) (p "Tick")))
-(after (4n) (λ (_) (p "...")))
-(.. (λ (_) (p "...")))
-(.. (λ (_) (every (4n) (λ (_) (p "Tick 2")))))
+  (<< s #"/bass" (bass))
+  (<< s #"/lead" (lead)))
 ```
 
 Dynamically scaling BPM with linear interpolation.
@@ -126,9 +113,8 @@ Dynamically scaling BPM with linear interpolation.
 
 ; Gradually decrease the tempo.
 (every (4n)
-  (λ (_)
-    (p "Tick!")
-    (set-bpm (l))))
+  (p "Tick!")
+  (set-bpm (l)))
 ```
 
 L-system beats. Evolves every 4 measures.
@@ -151,14 +137,11 @@ L-system beats. Evolves every 4 measures.
   (set! n (+ 1 n))
   val)
 
-(every (16n)
-  (λ (_)
-    (and (tick) (p "Tick!"))))
+(every (16n) (when (tick) (p "Tick!")))
 
 (every (* (1n) 4)
-  (λ (_)
-    (p "Evolving...")
-    (evolve))
+  (p "Evolving...")
+  (evolve)
 ```
 
 Markov melodies. Try it with rhythms too!
@@ -175,8 +158,7 @@ Markov melodies. Try it with rhythms too!
   n)
 
 (every (8n)
-  (λ (_)
-    (<< s #"/bass" (next-note))))
+  (<< s #"/bass" (next-note)))
 ```
 
 Managing ChucK:
@@ -249,7 +231,6 @@ TODO...
 * Break out goodies into their own file
 * Timeout for engine calls
 * Move example into their own file
-* `...` function for scheduling something to run on the next beat
 * Integrate wavetable, subtr, and rec
 * Some simplified interface for defining synths and samplers
 * Register shreds shortcut for `(tempfile (ck ...))`
