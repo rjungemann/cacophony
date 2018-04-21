@@ -189,6 +189,17 @@ Managing ChucK:
 (engine-stop!)
 ```
 
+Using a sampler:
+
+```racket
+(engine-start!)
+(engine-info)
+(define port (random-port))
+(define shred (engine-sampler port "/hit,N" "examples/ensemble/BASS1.aif" 0.5))
+(define s (add-sender "127.0.0.1" port))
+(<< s #"/hit")
+```
+
 Managing Fluidsynth:
 
 ```racket
@@ -244,7 +255,5 @@ TODO...
 * Break out goodies into their own file
 * Timeout for engine calls
 * Move example into their own file
-* Integrate wavetable, subtr, and rec
 * Some simplified interface for defining synths and samplers
-* Register shreds shortcut for `(tempfile (ck ...))`
 * Smooth out DSLs

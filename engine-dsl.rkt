@@ -23,7 +23,8 @@
          engine-shredule-code
          engine-wavetable
          engine-subtr
-         engine-rec)
+         engine-rec
+         engine-sampler)
 
 (define current-engine-chuck
   (make-parameter
@@ -113,7 +114,7 @@
   (map-shreds (map string->number (regexp-match* #rx"[0-9]+" (engine-receive!)))))
 
 (define (engine-shredule path)
-  (if (file-exists? (bytes->string/utf-8 path))
+  (if (file-exists? (first (string-split (bytes->string/utf-8 path) ":")))
     (begin
       (engine-send! #"/machine/add" path)
       (let ([id (string->number (engine-receive!))])
@@ -192,9 +193,6 @@
   (ck
     (=> (ref-call 'me 'arg (int 0))
         (decl 'string 'filename))
-    (if (equal? (ref-call 'filename 'length) 0)
-      (=> (string "foo.wav")
-          'filename))
     (=> dac
         (decl 'Gain 'g)
         (decl 'WvOut 'w)
@@ -252,13 +250,41 @@
           (=> (dur 1 ms) now)))
       (spork (call 'envdrive)))))
 
+(define engine-sampler-code
+  (ck
+    (=> (ref-call 'me 'arg (int 0))
+        (ref 'Std 'atoi)
+        (decl 'int 'port))
+    (=> (ref-call 'me 'arg (int 1))
+        (decl 'string 'path))
+    (=> (ref-call 'me 'arg (int 2))
+        (decl 'string 'filename))
+    (=> (ref-call 'me 'arg (int 3))
+        (ref 'Std 'atof)
+        (decl 'float 'gain))
+    (decl 'OscIn 'oin)
+    (decl 'OscMsg 'msg)
+    (=> 'port (ref 'oin 'port))
+    (ref-call 'oin 'addAddress 'path)
+    (decl 'SndBuf 'buf)
+    (=> 'filename (ref 'buf 'read))
+    (=> 'buf dac)
+    (=> (int 0) (ref 'buf 'loop))
+    (=> (int 0) (ref 'buf 'rate))
+    (while true
+      (=> 'oin now)
+      (while (ref-call 'oin 'recv 'msg)
+        (=> (int 0) (ref 'buf 'pos))
+        (=> (float 'gain) (ref 'buf 'gain))
+        (=> (float 1.0) (ref 'buf 'rate))))))
+
 (define (engine-shredule-code code . args)
   (tempfile
     code
     (λ (path)
-      (engine-shredule (string->bytes/utf-8 (string-join (append (list (bytes->string/utf-8 path))
-                                                                 args)
-                                                         ":"))))))
+      (define full-path
+        (string-join (append (list (bytes->string/utf-8 path)) args) ":"))
+      (engine-shredule (string->bytes/utf-8 full-path)))))
 
 (define (engine-wavetable)
   (engine-shredule-code wavetable-code))
@@ -269,3 +295,9 @@
 (define (engine-rec filename)
   (engine-shredule-code rec-code filename))
 
+(define (engine-sampler port path filename gain)
+  (engine-shredule-code engine-sampler-code
+                        (number->string port)
+                        path
+                        filename
+                        (number->string gain)))
