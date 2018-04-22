@@ -1,3 +1,5 @@
+[[https://github.com/rjungemann/cacophony/blob/master/assets/logo.svg|alt=cacophony]]
+
 # Cacophony
 
 By Roger Jungemann
@@ -277,3 +279,5 @@ TODO...
 * Break out goodies into their own file
 * Move example into their own file
 * Smooth out DSLs
+* MIDI file import for looping
+* TSlime.vim instructions
