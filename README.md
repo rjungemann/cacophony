@@ -4,7 +4,11 @@
 
 By Roger Jungemann
 
-A livecoding system in Racket. Juggle OSC connections and schedule events.
+A livecoding system in Racket.
+
+Make music with code on-the-fly in purpose-built sublanguages.
+
+Juggle OSC connections. Schedule events to a beat. Synthesize sounds and trigger them with events.
 
 Intended to be used with [TSlime.vim](/Users/admin/Desktop/macro-stuff).
 
@@ -15,7 +19,9 @@ Intended to be used with [TSlime.vim](/Users/admin/Desktop/macro-stuff).
 brew install minimal-racket
 
 # Some optional stuff you can install.
-brew install rlwrap chuck
+brew install rlwrap chuck fluid
+
+# You may want to have vim installed with TSlime.vim.
 
 # Install dependencies.
 raco setup
