@@ -1,4 +1,4 @@
-[[https://github.com/rjungemann/cacophony/blob/master/assets/logo.svg|alt=cacophony]]
+![Cacophony Logo](https://github.com/rjungemann/cacophony/blob/master/assets/logo.svg)
 
 # Cacophony
 
