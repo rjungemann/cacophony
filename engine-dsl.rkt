@@ -24,7 +24,8 @@
          engine-wavetable
          engine-subtr
          engine-rec
-         engine-sampler)
+         engine-sampler
+         engine-synth)
 
 (define current-engine-chuck
   (make-parameter
@@ -215,19 +216,17 @@
       (decl 'float 'filteroffset)
       (decl 'SndBuf 'shape1)
       (decl 'SndBuf 'shape2)
-      (decl 'Gain 'oscgain1)
-      (decl 'Gain 'oscgain2)
       (decl 'ADSR 'ampenv)
       (decl 'ADSR 'filterenv)
       (decl 'LPF 'lpf)
-      (=> inlet 'shape1 'oscgain1 'lpf)
-      (=> inlet 'shape2 'oscgain2 'lpf)
+      (=> inlet 'shape1 'lpf)
+      (=> inlet 'shape2 'lpf)
       (=> 'lpf 'ampenv outlet)
       (=> (float 0.07) 'spread)
       (=> (int 1) (ref 'shape1 'loop))
       (=> (int 1) (ref 'shape2 'loop))
-      (=> (float 0.5) (ref 'oscgain1 'gain))
-      (=> (float 0.5) (ref 'oscgain2 'gain))
+      (=> (float 0.5) (ref 'shape1 'gain))
+      (=> (float 0.5) (ref 'shape2 'gain))
       (=> (float 1500.0) 'filtermult)
       (=> (float 200.0) 'filteroffset)
       (fun 'void 'read (list (decl 'string 's))
@@ -250,6 +249,7 @@
           (=> (dur 1 ms) now)))
       (spork (call 'envdrive)))))
 
+; TODO: Strip path
 (define engine-sampler-code
   (ck
     (=> (ref-call 'me 'arg (int 0))
@@ -278,6 +278,78 @@
         (=> (float 'gain) (ref 'buf 'gain))
         (=> (float 1.0) (ref 'buf 'rate))))))
 
+(define engine-synth-code
+  (ck
+    (=> (ref-call 'me 'arg (int 0))
+        (ref 'Std 'atoi)
+        (decl 'int 'port))
+    (=> (ref-call 'me 'arg (int 1))
+        (decl 'string 'filename))
+    (=> (ref-call 'me 'arg (int 2))
+        (ref 'Std 'atoi)
+        (decl 'float 'spread))
+    (=> (ref-call 'me 'arg (int 3))
+        (ref 'Std 'atoi)
+        (decl 'float 'filtermult))
+    (=> (ref-call 'me 'arg (int 4))
+        (ref 'Std 'atoi)
+        (decl 'float 'filteroffset))
+    (=> (ref-call 'me 'arg (int 5))
+        (ref 'Std 'atoi)
+        (decl 'float 'gain))
+    (=> (ref-call 'me 'arg (int 6))
+        (ref 'Std 'atoi)
+        (decl 'float 'ampenvattack))
+    (=> (ref-call 'me 'arg (int 7))
+        (ref 'Std 'atoi)
+        (decl 'float 'ampenvdecay))
+    (=> (ref-call 'me 'arg (int 8))
+        (ref 'Std 'atoi)
+        (decl 'float 'ampenvsustain))
+    (=> (ref-call 'me 'arg (int 9))
+        (ref 'Std 'atoi)
+        (decl 'float 'ampenvrelease))
+    (=> (ref-call 'me 'arg (int 10))
+        (ref 'Std 'atoi)
+        (decl 'float 'filterenvattack))
+    (=> (ref-call 'me 'arg (int 11))
+        (ref 'Std 'atoi)
+        (decl 'float 'filterenvdecay))
+    (=> (ref-call 'me 'arg (int 12))
+        (ref 'Std 'atoi)
+        (decl 'float 'filterenvsustain))
+    (=> (ref-call 'me 'arg (int 13))
+        (ref 'Std 'atoi)
+        (decl 'float 'filterenvrelease))
+
+    (decl 'OscIn 'oin)
+    (decl 'OscMsg 'msg)
+    (=> 'port (ref 'oin 'port))
+    (ref-call 'oin 'addAddress (string "/key-on,if"))
+    (ref-call 'oin 'addAddress (string "/key-off"))
+    (decl 'Subtr 's)
+    (=> 'filename (ref 's 'read))
+    (=> 's dac)
+    (=> (float 36.0) (ref 'Std 'mtof) (ref 's 'freq))
+    (ref-call 's.ampenv 'set (dur 'ampenvattack ms)
+                             (dur 'ampenvdecay ms)
+                             'ampenvsustain
+                             (dur 'ampenvrelease ms))
+    (ref-call 's.filterenv 'set (dur 'filterenvattack ms)
+                                (dur 'filterenvdecay ms)
+                                'filterenvsustain
+                                (dur 'filterenvrelease ms))
+    (=> (float 'filtermult) (ref 's 'filtermult))
+    (=> (float 'filteroffset) (ref 's 'filteroffset))
+    (while true
+      (=> 'oin now)
+      (while (ref-call 'oin 'recv 'msg)
+        (if (equal? (ref 'msg 'address) (string "/key-on"))
+          (=> (ref-call 'msg 'getFloat (int 1)) 's.gain)
+          (ref-call 's 'keyOn))
+        (if (equal? (ref 'msg 'address) (string "/key-off"))
+          (ref-call 's 'keyOff))))))
+
 (define (engine-shredule-code code . args)
   (tempfile
     code
@@ -301,3 +373,7 @@
                         path
                         filename
                         (number->string gain)))
+
+(define (engine-synth . args)
+  (apply engine-shredule-code (append (list engine-synth-code)
+                                      (map (λ (n) (format "~a" n)) args))))

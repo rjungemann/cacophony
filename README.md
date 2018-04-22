@@ -202,6 +202,26 @@ Using a sampler:
 (<< s #"/hit")
 ```
 
+Using a synth:
+
+```racket
+(engine-start!)
+(engine-info)
+(engine-subtr)
+(define port (random-port))
+(define shred (engine-synth port "examples/ensemble/AKWF_0001.wav"
+                                 ; spread, filtermult, filteroffset, gain
+                                 0.07 2000 400 0.5
+                                 ; ampenv
+                                 1 350 0.7 500
+                                 ;filterenv
+                                 15 550 0.7 400))
+(define s (add-sender "127.0.0.1" port))
+(<< s #"/key-on" 36 0.5)
+(sleep 0.5)
+(<< s #"/key-off")
+```
+
 Managing Fluidsynth:
 
 ```racket
@@ -256,5 +276,4 @@ TODO...
 * Docs
 * Break out goodies into their own file
 * Move example into their own file
-* Some simplified interface for defining synths
 * Smooth out DSLs
