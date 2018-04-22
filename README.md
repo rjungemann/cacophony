@@ -176,6 +176,12 @@ Managing ChucK:
 (p "~a" (engine-shreds))
 (p "~a" (engine-unshredule 2))
 
+; Tell ChucK to quit nicely and then stop it.
+(engine-quit)
+(engine-stop!)
+```
+
+```racket
 ; Load some pre-defined code and verify.
 (engine-wavetable)
 (engine-shredule-code (ck (<<<>>> 'Foo)))
@@ -183,10 +189,6 @@ Managing ChucK:
 ; Some other pre-defined code that you can try.
 (engine-subtr)
 (engine-rec "foo.wav")
-
-; Tell ChucK to quit nicely and then stop it.
-(engine-quit)
-(engine-stop!)
 ```
 
 Using a sampler:
@@ -253,7 +255,6 @@ TODO...
 * Tests
 * Docs
 * Break out goodies into their own file
-* Timeout for engine calls
 * Move example into their own file
-* Some simplified interface for defining synths and samplers
+* Some simplified interface for defining synths
 * Smooth out DSLs

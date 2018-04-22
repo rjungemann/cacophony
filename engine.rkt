@@ -1,6 +1,7 @@
 #lang racket
 
 (require osc
+         racket/sandbox
          "utils.rkt"
          "ck.rkt")
 
@@ -111,7 +112,8 @@
   (void))
 
 (define (engine-full-receive! ch)
-  (channel-get ch))
+  ; NOTE: Max timeout of 1 second (hard-coded for now).
+  (call-with-limits 1 #f (lambda () (channel-get ch))))
 
 (define (engine-full-send! socket host osc-port route . args)
   (udp-send-to socket host osc-port (osc-element->bytes (osc-message route args)))
