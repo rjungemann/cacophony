@@ -80,7 +80,6 @@
     'chout]
    [cherr
     'cherr]
-   ; TODO: Verify this.
    [newline
     (string->symbol "IO.newline()")]
    [adc
@@ -93,8 +92,6 @@
     'inlet]
    [outlet
     'outlet]
-   ;; Classes
-   ; TODO: Verify this.
    [class
     (λ (name extends . body)
       (define baked-extends (if extends (format " extends ~a" extends) ""))
@@ -105,12 +102,6 @@
       (define baked-extends (if extends (format " extends ~a" extends) ""))
       (define baked-body (apply do body))
       (format "public class ~a~a {\n~a\n}" name baked-extends baked-body))]
-   [ref
-    (λ (name key)
-      (format "~a.~a" name key))]
-   [ref-call
-    (λ (name fn . args)
-      (format "~a.~a" name (apply call (append (list fn) args))))]
    [this
     'this]
    ;; Basics
@@ -246,14 +237,12 @@
    [inc
     (λ (arg)
       (format "~a++" arg))]
-   ;; TODO: Verify
    [pre-inc
     (λ (arg)
       (format "++~a" arg))]
    [dec
     (λ (arg)
       (format "~a--" arg))]
-   ;; TODO: Verify
    [pre-dec
     (λ (arg)
       (format "--~a" arg))]
