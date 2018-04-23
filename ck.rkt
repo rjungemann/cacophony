@@ -105,7 +105,7 @@
    [this
     'this]
    ;; Basics
-   [<<<>>>
+   [inspect
     (λ args args
       (format "<<< ~a >>>" (apply exprs args)))]
    [oper

@@ -205,9 +205,9 @@ Using a sampler:
 (engine-start!)
 (engine-info)
 (define port (random-port))
-(define shred (engine-sampler port "/hit,N" "examples/ensemble/BASS1.aif" 0.5))
+(define shred (engine-sampler port "examples/ensemble/BASS1.aif"))
 (define s (add-sender "127.0.0.1" port))
-(<< s #"/hit")
+(<< s #"/hit" 0.5)
 ```
 
 Using a synth:

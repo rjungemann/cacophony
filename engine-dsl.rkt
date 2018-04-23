@@ -200,8 +200,8 @@
         blackhole)
     (=> 'filename
         'w.wavFilename)
-    (<<<>>> (string "Writing to file:")
-            (+ (string "'") (call 'w.filename) (string "'")))
+    (inspect (string "Writing to file:")
+             (+ (string "'") (call 'w.filename) (string "'")))
     (=> (float 0.5)
         'g.gain)
     (@=> null 'w)
@@ -256,16 +256,11 @@
         'Std.atoi
         (decl 'int 'port))
     (=> (call 'me.arg (int 1))
-        (decl 'string 'path))
-    (=> (call 'me.arg (int 2))
         (decl 'string 'filename))
-    (=> (call 'me.arg (int 3))
-        'Std.atof
-        (decl 'float 'gain))
     (decl 'OscIn 'oin)
     (decl 'OscMsg 'msg)
     (=> 'port 'oin.port)
-    (call 'oin.addAddress 'path)
+    (call 'oin.addAddress (string "/hit,f"))
     (decl 'SndBuf 'buf)
     (=> 'filename 'buf.read)
     (=> 'buf dac)
@@ -275,7 +270,7 @@
       (=> 'oin now)
       (while (call 'oin.recv 'msg)
         (=> (int 0) 'buf.pos)
-        (=> (float 'gain) 'buf.gain)
+        (=> (call 'msg.getFloat (int 0)) 'buf.gain)
         (=> (float 1.0) 'buf.rate)))))
 
 (define engine-synth-code
@@ -367,12 +362,10 @@
 (define (engine-rec filename)
   (engine-shredule-code rec-code filename))
 
-(define (engine-sampler port path filename gain)
+(define (engine-sampler port filename)
   (engine-shredule-code engine-sampler-code
                         (number->string port)
-                        path
-                        filename
-                        (number->string gain)))
+                        filename))
 
 (define (engine-synth . args)
   (apply engine-shredule-code (append (list engine-synth-code)
