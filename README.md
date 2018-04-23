@@ -10,7 +10,7 @@ Make music with code on-the-fly in purpose-built sublanguages.
 
 Juggle OSC connections. Schedule events to a beat. Synthesize sounds and trigger them with events.
 
-Intended to be used with [TSlime.vim](/Users/admin/Desktop/macro-stuff).
+Intended to be used with [TSlime.vim](https://github.com/jgdavey/tslime.vim).
 
 ## Setup
 
@@ -19,7 +19,7 @@ Intended to be used with [TSlime.vim](/Users/admin/Desktop/macro-stuff).
 brew install minimal-racket
 
 # Some optional stuff you can install.
-brew install rlwrap chuck fluid
+brew install rlwrap chuck fluid-synth
 
 # You may want to have vim installed with TSlime.vim.
 
@@ -27,6 +27,9 @@ brew install rlwrap chuck fluid
 raco setup
 # Or...
 yes | raco pkg install --skip-installed rackunit-lib osc unix-signals threading scribble
+
+# To fix unicode in REPL:
+yes | raco pkg install --skip-installed readline-gpl
 
 # Try running.
 racket racket.rkt
