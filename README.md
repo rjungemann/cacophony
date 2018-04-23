@@ -17,6 +17,9 @@ Intended to be used with [TSlime.vim](https://github.com/jgdavey/tslime.vim).
 ```sh
 # Make sure you have Racket installed.
 brew install minimal-racket
+# Or...
+brew install caskroom/cask/racket
+# But not both!
 
 # Some optional stuff you can install.
 brew install rlwrap chuck fluid-synth
@@ -30,6 +33,7 @@ yes | raco pkg install --skip-installed rackunit-lib osc unix-signals threading 
 
 # To fix unicode in REPL:
 yes | raco pkg install --skip-installed readline-gpl
+# See also https://github.com/racket/racket/issues/1956
 
 # Try running.
 racket racket.rkt
@@ -290,3 +294,5 @@ TODO...
 * Smooth out DSLs
 * MIDI file import for looping
 * TSlime.vim instructions
+* Hihats
+* Presentation
