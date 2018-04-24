@@ -294,6 +294,7 @@ TODO...
 * Hihats
 * Presentation
 * Sampler with pitch, velocity, key-on, and key-off
+* Slide for basic synth
 * OSC parameters for basic synth
 * Mutex for event handlers instead of copying list?
 * A way to lock BPM so I can integrate looper later
