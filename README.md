@@ -17,9 +17,6 @@ Intended to be used with [TSlime.vim](https://github.com/jgdavey/tslime.vim).
 ```sh
 # Make sure you have Racket installed.
 brew install minimal-racket
-# Or...
-brew install caskroom/cask/racket
-# But not both!
 
 # Some optional stuff you can install.
 brew install rlwrap chuck fluid-synth
@@ -296,3 +293,9 @@ TODO...
 * TSlime.vim instructions
 * Hihats
 * Presentation
+* Sampler with pitch, velocity, key-on, and key-off
+* OSC parameters for basic synth
+* Mutex for event handlers instead of copying list?
+* A way to lock BPM so I can integrate looper later
+* LiSa-based class with granular playback
+* Use LiSa-based class as basis of looper
