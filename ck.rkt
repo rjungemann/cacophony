@@ -261,12 +261,6 @@
    [if
     (λ (expr1 . stmts)
       (format "if (~a) {\n~a\n}" expr1 (apply do stmts)))]
-   [else-if
-    (λ (expr1 . stmts)
-      (format "else if (~a) {\n~a\n}" expr1 (apply do stmts)))]
-   [else
-    (λ stmts stmts
-      (format "else {\n~a\n}" (apply do stmts)))]
    [while
     (λ (expr1 . stmts)
       (format "while (~a) {\n~a\n}" expr1 (apply do stmts)))]
