@@ -2,9 +2,9 @@
 
 (require compatibility/defmacro
          osc
-         rx/event-emitter
          unix-signals
          "utils.rkt"
+         "events.rkt"
          "clock.rkt"
          "receiver.rkt"
          "sender.rkt"

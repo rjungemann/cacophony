@@ -124,17 +124,17 @@
     (λ (t name)
       (format "static ~a @ ~a" t name))]
    [array-decl
-    (λ (t name)
-      (format "~a ~a[]" t name))]
+    (λ (t name [size ""])
+      (format "~a ~a[~a]" t name size))]
    [array-static-decl
-    (λ (t name)
-      (format "static ~a ~a[]" t name))]
+    (λ (t name [size ""])
+      (format "static ~a ~a[~a]" t name size))]
    [array-@-decl
-    (λ (t name)
-      (format "~a @ ~a[]" t name))]
+    (λ (t name [size ""])
+      (format "~a @ ~a[~a]" t name size))]
    [array-static-@-decl
-    (λ (t name)
-      (format "static ~a @ ~a[]" t name))]
+    (λ (t name [size ""])
+      (format "static ~a @ ~a[~a]" t name size))]
    [fun
     (λ (t name params . body)
       (format "fun ~a ~a (~a) {\n~a\n}" t name (apply exprs params) (apply do body)))]
