@@ -221,7 +221,7 @@ Using a synth:
 (engine-info)
 (engine-subtr)
 (define port (random-port))
-(define shred (engine-synth port "examples/ensemble/AKWF_0001.wav"
+(define shred (engine-synth port "examples/ensemble/AKWF_0001.wav" 0.5
                                  ; spread, filtermult, filteroffset, gain
                                  0.07 2000 400 0.5
                                  ; ampenv
@@ -229,7 +229,13 @@ Using a synth:
                                  ;filterenv
                                  15 550 0.7 400))
 (define s (add-sender "127.0.0.1" port))
-(<< s #"/key-on" 36 0.5)
+(<< s #"/key-on" 48 0.5)
+(sleep 0.5)
+(<< s #"/key-off")
+(sleep 0.5)
+(<< s #"/key-on" 60 0.5)
+(sleep 0.5)
+(<< s #"/key-on" 48 0.5)
 (sleep 0.5)
 (<< s #"/key-off")
 ```
@@ -294,7 +300,6 @@ TODO...
 * Hihats
 * Presentation
 * Sampler with pitch, velocity, key-on, and key-off
-* Slide for basic synth
 * OSC parameters for basic synth
 * Mutex for event handlers instead of copying list?
 * A way to lock BPM so I can integrate looper later

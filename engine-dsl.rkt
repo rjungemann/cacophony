@@ -282,38 +282,41 @@
         (decl 'string 'filename))
     (=> (call 'me.arg (int 2))
         'Std.atoi
-        (decl 'float 'spread))
+        (decl 'float 'slewtime))
     (=> (call 'me.arg (int 3))
         'Std.atoi
-        (decl 'float 'filtermult))
+        (decl 'float 'spread))
     (=> (call 'me.arg (int 4))
         'Std.atoi
-        (decl 'float 'filteroffset))
+        (decl 'float 'filtermult))
     (=> (call 'me.arg (int 5))
         'Std.atoi
-        (decl 'float 'gain))
+        (decl 'float 'filteroffset))
     (=> (call 'me.arg (int 6))
         'Std.atoi
-        (decl 'float 'ampenvattack))
+        (decl 'float 'gain))
     (=> (call 'me.arg (int 7))
         'Std.atoi
-        (decl 'float 'ampenvdecay))
+        (decl 'float 'ampenvattack))
     (=> (call 'me.arg (int 8))
         'Std.atoi
-        (decl 'float 'ampenvsustain))
+        (decl 'float 'ampenvdecay))
     (=> (call 'me.arg (int 9))
         'Std.atoi
-        (decl 'float 'ampenvrelease))
+        (decl 'float 'ampenvsustain))
     (=> (call 'me.arg (int 10))
         'Std.atoi
-        (decl 'float 'filterenvattack))
+        (decl 'float 'ampenvrelease))
     (=> (call 'me.arg (int 11))
         'Std.atoi
-        (decl 'float 'filterenvdecay))
+        (decl 'float 'filterenvattack))
     (=> (call 'me.arg (int 12))
         'Std.atoi
-        (decl 'float 'filterenvsustain))
+        (decl 'float 'filterenvdecay))
     (=> (call 'me.arg (int 13))
+        'Std.atoi
+        (decl 'float 'filterenvsustain))
+    (=> (call 'me.arg (int 14))
         'Std.atoi
         (decl 'float 'filterenvrelease))
 
@@ -326,6 +329,16 @@
     (=> 'filename 's.read)
     (=> 's dac)
     (=> (float 36.0) 'Std.mtof 's.freq)
+
+    (=> (decl 'Envelope 'e) blackhole)
+    (=> (float 36.0) 'e.value)
+    (=> (dur 'slewtime second) 'e.duration)
+    (fun 'void 'slew '()
+      (while true
+        (=> (call 'e.value) 'Std.mtof 's.freq)
+        (=> (dur (float 1) ms) now)))
+    (spork (call 'slew))
+
     (call 's.ampenv.set (dur 'ampenvattack ms)
                         (dur 'ampenvdecay ms)
                         'ampenvsustain
@@ -336,14 +349,25 @@
                            (dur 'filterenvrelease ms))
     (=> (float 'filtermult) 's.filtermult)
     (=> (float 'filteroffset) 's.filteroffset)
+
+    (=> (int 0) (decl 'int 'noted))
     (while true
       (=> 'oin now)
       (while (call 'oin.recv 'msg)
         (if (equal? 'msg.address (string "/key-on"))
+          (if (equal? 'noted (int 1))
+            (=> (dur (float 0.5) second) 'e.duration))
+          (if (equal? 'noted (int 0))
+            (=> (dur (float 0) second) 'e.duration))
+
+          (=> (cast (call 'msg.getInt (int 0)) 'float) 'e.target)
+          (inspect (call 'e.target))
           (=> (call 'msg.getFloat (int 1)) 's.gain)
-          (call 's.keyOn))
+          (call 's.keyOn)
+          (=> (int 1) 'noted))
         (if (equal? 'msg.address (string "/key-off"))
-          (call 's.keyOff))))))
+          (call 's.keyOff)
+          (=> (int 0) 'noted))))))
 
 (define (engine-shredule-code code . args)
   (tempfile
