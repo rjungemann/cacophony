@@ -137,6 +137,9 @@
   (remove-listener! (clock-pulse-vent (current-clock)) cb)
   (void))
 
+(define (remove-beat-listener cb)
+  (remove-listener! (clock-beat-vent (current-clock)) cb))
+
 (define (help)
   (p "TODO"))
 
@@ -174,16 +177,16 @@
         (read-eval-print-loop)))))
 
 (define-macro (defer . body)
-  `(clock-at! (current-clock) (now) (λ (_) ,@body)))
+  `(clock-at! (current-clock) (now) (λ (_) (begin ,@body))))
 
 (define-macro (next . body)
-  `(clock-next-beat! (current-clock) (λ (_) ,@body)))
+  `(clock-next-beat! (current-clock) (λ (_) (begin ,@body))))
 
 (define-macro (after beats . body)
-  `(clock-after! (current-clock) ,beats (λ (_) ,@body)))
+  `(clock-after! (current-clock) ,beats (λ (_) (begin ,@body))))
 
 (define-macro (every beats . body)
-  `(clock-every! (current-clock) ,beats (λ (_) ,@body)))
+  `(clock-every! (current-clock) ,beats (λ (_) (begin ,@body))))
 
 (define (<< s route . args)
   (sender-send! s (osc-message route args))
@@ -364,7 +367,7 @@
             ([i (in-range 0 n)])
     (flatten (map rules accum))))
 
-(define (euclidian num-pulses total-steps)
+(define (euclidian num-pulses total-steps [offset 0])
   (define (generate-chunk n)
     (for/fold ([l '()])
               ([i (in-range 0 n)])
@@ -376,9 +379,9 @@
     (if (>= (length bucket) total-steps)
       (begin
         (set! bucket (drop bucket total-steps))
-        (set! steps (append steps (list 1))))
-      (set! steps (append steps (list 0)))))
-  steps)
+        (set! steps (append steps (list #t))))
+      (set! steps (append steps (list #f)))))
+  (rotate-left steps offset))
 
 ; ------
 ; Markov

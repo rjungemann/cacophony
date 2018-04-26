@@ -19,7 +19,8 @@
     (apply callback args)))
 
 (define (add-listener! evt callback)
-  (set-add! (event-emitter-listeners evt) callback))
+  (set-add! (event-emitter-listeners evt) callback)
+  callback)
 
 (define (remove-listener! evt callback)
   (set-remove! (event-emitter-listeners evt) callback))
