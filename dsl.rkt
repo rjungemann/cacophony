@@ -11,6 +11,7 @@
          "socket.rkt"
          "ck.rkt"
          "engine-dsl.rkt"
+         "fluid-dsl.rkt"
          "alm.rkt")
 
 (provide (all-defined-out))
@@ -414,4 +415,10 @@
   (for ([note notes])
     (when (or (equal? (first note) 'noteon)
               (equal? (first note) 'noteoff))
-      (after (last note) (λ (e) (cb e note))))))
+      (after (last note) (cb note)))))
+
+(define (fluid-alm-run notes)
+  (alm-run notes
+    (λ (n)
+      (fluid-send! (format "~a ~a ~a ~a" (first n) 1 (second n) (third n)))
+      (fluid-flush!))))

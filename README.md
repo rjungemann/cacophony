@@ -264,6 +264,10 @@ Alm:
 
 (alm-run notes
   (λ (_ n)
+    (displayln n)))
+
+(alm-run notes
+  (λ (_ n)
     (fluid-send! (format "~a ~a ~a ~a" (first n) 1 (second n) (third n)))
     (fluid-flush!)))
 ```
@@ -350,3 +354,4 @@ TODO...
 * A way to lock BPM so I can integrate looper later
 * LiSa-based class with granular playback
 * Use LiSa-based class as basis of looper
+* Subtr slew envelope should probably be exponential?

@@ -74,7 +74,6 @@
       (remove-listener! (clock-tick-vent (clock-event-clock e)) listener)))
   (add-listener! (clock-tick-vent c) listener))
 
-; TODO: Verify this!
 (define (clock-on! c beats cb)
   (define (new-cb e)
     (define c (clock-event-clock e))
@@ -82,13 +81,12 @@
     (define current-beat (clock-beat c))
     (define current-pulse (clock-pulse c))
     (define current-beats (+ current-beat (/ current-pulse ppqn)))
-    (when (<= current-beats beats)
+    (when (<= beats current-beats)
       (cb e)
-      (remove-listener! (clock-pulse-vent c) cb)))
+      (remove-listener! (clock-pulse-vent c) new-cb)))
   (add-listener! (clock-pulse-vent c) new-cb)
   new-cb)
 
-; TODO: Verify this!
 (define (clock-after! c beats cb)
   (define ppqn (clock-ppqn c))
   (define current-beat (clock-beat c))
