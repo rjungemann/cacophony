@@ -361,7 +361,6 @@
             (=> (dur (float 0) second) 'e.duration))
 
           (=> (cast (call 'msg.getInt (int 0)) 'float) 'e.target)
-          (inspect (call 'e.target))
           (=> (call 'msg.getFloat (int 1)) 's.gain)
           (call 's.keyOn)
           (=> (int 1) 'noted))

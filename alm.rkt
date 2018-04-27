@@ -174,11 +174,11 @@
                  [after-element (last linked-elements)]
                  [prior-element-n (and prior-element (list-ref prior-element 1))]
                  [new-note-n (list-ref n 1)])
-            (list (and (not (equal? prior-element-n new-note-n))
-                       (append (list 'noteon) (drop new-note 1)))
-                  (and (not after-element)
-                       (append (list 'noteoff (list-ref new-note 1) 0)
-                               (drop new-note 3)))))
+            (list (when (not (equal? prior-element-n new-note-n))
+                    (append (list 'noteon) (drop new-note 1)))
+                  (when (not after-element)
+                    (append (list 'noteoff (list-ref new-note 1) 0)
+                            (drop new-note 3)))))
           (list n)))
     elements))
 

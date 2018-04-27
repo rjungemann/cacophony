@@ -264,8 +264,56 @@ Alm:
 
 (alm-run notes
   (λ (_ n)
+    (displayln n)))
+
+(alm-run notes
+  (λ (_ n)
     (fluid-send! (format "~a ~a ~a ~a" (first n) 1 (second n) (third n)))
     (fluid-flush!)))
+```
+
+Wavetable example with ck:
+
+```racket
+(engine-start!)
+(engine-info)
+(engine-wavetable)
+
+(define wavetable-code
+  (ck
+    ; Load the wavetables.
+    (array-@-decl 'SndBuf 'buffers (int 100))
+    (for (=> (int 0) (decl 'int 'i)) (< 'i (int 100)) (inc 'i)
+      (decl 'SndBuf 'buf)
+      (=> (call 'Std.itoa (+ 'i (int 1))) (decl 'string 's))
+      (=> (- (int 4) (call 's.length)) (decl 'int 'l))
+      (for (=> (int 0) (decl 'int 'j)) (< 'j 'l) (inc 'j)
+        (=> (+ (string "0") 's) 's))
+      (=> (+ (string "examples/wavetables/AKWF_0001/AKWF_") 's (string ".wav")) 'buf.read)
+      (@=> 'buf (array-ref 'buffers 'i)))
+    ; Setup the wavetable oscillator.
+    (decl 'Phasor 'phasor)
+    (=> (float 55.0) 'phasor.freq)
+    (decl 'Wavetable 'wavetable)
+    (@=> 'buffers 'wavetable.buffers)
+    (decl 'Gain 'gain)
+    (=> (float 0.1) 'gain.gain)
+    ; Begin morphing.
+    (=> (float 0.0) (decl 'float 'n))
+    (fun 'void 'morph '()
+      (while true
+        (=> (* (+ (call 'Math.sin 'n) (float 1.0)) (float 0.5)) 'wavetable.interp)
+        (=> (+ 'n (float 0.00025)) 'n)
+        (=> (dur (float 0.5) ms) now)))
+    ; Play the oscillator.
+    (=> 'phasor 'wavetable 'gain dac)
+    (spork (call 'morph))
+    (=> (dur (float 8000) ms) now)))
+
+(engine-shredule-code wavetable-code)
+
+(engine-quit)
+(engine-stop!)
 ```
 
 ## Using the socket
@@ -298,7 +346,6 @@ TODO...
 * MIDI file import for looping
 * TSlime.vim instructions
 * Hihats
-* Presentation
 * Sampler with pitch, velocity, key-on, and key-off
 * OSC parameters for basic synth
 * A way to lock BPM so I can integrate looper later
@@ -306,3 +353,4 @@ TODO...
 * Use LiSa-based class as basis of looper
 * Master Buss (controllable with OSC)
 * Measure-based sync
+* Subtr slew envelope should probably be exponential?
