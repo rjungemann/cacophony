@@ -338,6 +338,7 @@ TODO...
 
 ## TODO
 
+* Split the DSL methods up better so they can be required separately
 * Tests
 * Docs
 * Break out goodies into their own file
