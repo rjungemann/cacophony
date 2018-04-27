@@ -258,9 +258,25 @@
    [new
     (λ (arg)
       (format "new ~a" arg))]
+   ;;
+   ;; USAGE:
+   ;;
+   ;;     (if (equal? 'i (int 1))
+   ;;       (inspect (string "one"))
+   ;;       (elsif (equal? 'i (int 2))
+   ;;         (inspect (string "two")))
+   ;;       (else
+   ;;         (inspect (string "otherwise"))))
+   ;;
    [if
     (λ (expr1 . stmts)
-      (format "if (~a) {\n~a\n}" expr1 (apply do stmts)))]
+      (format "if (~a)\n{\n~a\n}" expr1 (apply do stmts)))]
+   [elsif
+    (λ (expr1 . stmts)
+      (format "} else if (~a) {\n~a" expr1 (apply do stmts)))]
+   [else
+    (λ (expr1 . stmts)
+      (format "} else {\n~a" expr1))]
    [while
     (λ (expr1 . stmts)
       (format "while (~a) {\n~a\n}" expr1 (apply do stmts)))]
