@@ -129,10 +129,6 @@
   (clock-clear! (current-clock))
   (void))
 
-(define (remove-tick-listener cb)
-  (remove-listener! (clock-tick-vent (current-clock)) cb)
-  (void))
-
 (define (remove-pulse-listener cb)
   (remove-listener! (clock-pulse-vent (current-clock)) cb)
   (void))
@@ -175,9 +171,6 @@
         (collect-garbage 'major)
         ; And go!
         (read-eval-print-loop)))))
-
-(define-macro (defer . body)
-  `(clock-at! (current-clock) (now) (λ (_) (begin ,@body))))
 
 (define-macro (next . body)
   `(clock-next-beat! (current-clock) (λ (_) (begin ,@body))))

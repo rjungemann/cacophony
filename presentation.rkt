@@ -50,6 +50,7 @@
 ;; DSL #2: ck
 ;; ----------
 
+; Example of the ck DSL. This one does wavetable scanning.
 (engine-shredule-code
   (ck
     ; Load the wavetables.
@@ -119,21 +120,21 @@
     (every (4n)
       (<< sender #"/hit" 0.5))))
 
-; Snare drum
+; Snare drum. Uses euclidian sequencing to build a sort-of dembow riddim.
 (come-in
   (define port (random-port))
   (define shred (engine-sampler port "examples/tr-606/snare-drum.wav" 0.4))
   (define sender (add-sender "127.0.0.1" port))
   (define euclid (rotator (euclidian 3 8 2)))
-  (define trig (rotator (list #t #t #t #t #t #f)))
+  (define trig (rotator (list #f #t #t #t #t #f)))
   (set! snare-drum
     (every (8n)
       (when (and (euclid) (trig))
         (<< sender #"/hit" 0.1)))))
 
-; Hi-hats
+; Hi-hats. Generated using l-systems to create endless self-similar rhythms.
 (come-in
-  (define rhythm (box (list #t #f #f #t)))
+  (define rhythm (box (list #f #t #f #t)))
   (define port (random-port))
   (define shred (engine-sampler port "examples/tr-606/closed-hh.wav" 0.6))
   (define sender (add-sender "127.0.0.1" port))
@@ -156,7 +157,7 @@
       (when (tick)
         (<< sender #"/hit" 0.05)))))
 
-; Bass
+; Bass. Uses rotators to create shifting melodies and rhythm.
 (come-in
   (define port (random-port))
   (define shred (engine-synth port "examples/ensemble/AKWF_0001.wav" 0.5
@@ -172,11 +173,11 @@
   (set! bass
     (every (8n)
       (when (trig)
-        (<< sender #"/key-on" (note) 0.5)
+        (<< sender #"/key-on" (note) 0.4)
         (when (not (slide))
           (after (16n) (<< sender #"/key-off")))))))
 
-; Lead
+; Lead. Uses markov chains to build endless melodies "inspired" by a source.
 (come-in
   (define port (random-port))
   (define shred (engine-synth port "examples/ensemble/AKWF_0096.wav" 0.5

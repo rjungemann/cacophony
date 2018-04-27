@@ -14,9 +14,8 @@
   (event-emitter (mutable-set)))
 
 (define (trigger evt . args)
-  (define l (set->list (event-emitter-listeners evt)))
-  (for ([callback l])
-    (apply callback args)))
+  (set-for-each (set-copy (event-emitter-listeners evt))
+                (λ (cb) (apply cb args))))
 
 (define (add-listener! evt callback)
   (set-add! (event-emitter-listeners evt) callback)

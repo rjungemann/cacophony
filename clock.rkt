@@ -10,12 +10,9 @@
   ppqn->ms
   make-clock
   make-clock-event
-  #| clock-pulse-tick! |#
-  #| clock-tick-tick! |#
   clock-tick!
   clock-start!
   clock-stop!
-  clock-at!
   clock-on!
   clock-after!
   clock-next-beat!
@@ -23,7 +20,7 @@
   clock-every!
   clock-clear!)
 
-(struct clock [bpm ppqn measure-length beat pulse started-at previous-at running? tick-vent pulse-vent beat-vent measure-vent] #:mutable)
+(struct clock [bpm ppqn measure-length beat pulse started-at previous-at running? pulse-vent beat-vent measure-vent] #:mutable)
 (struct clock-event [clock t])
 
 (define (now) (current-inexact-milliseconds))
@@ -31,42 +28,30 @@
 (define (ppqn->ms bpm ppqn) (/ (/ 60000.0 bpm) ppqn))
 
 (define (make-clock bpm ppqn)
-  (clock bpm ppqn 4 0 0 -1 -1 #f (make-event-emitter) (make-event-emitter) (make-event-emitter) (make-event-emitter)))
+  (clock bpm ppqn 4 0 0 -1 -1 #f (make-event-emitter) (make-event-emitter) (make-event-emitter)))
 
 (define (make-clock-event c t)
   (clock-event c t))
 
-(define (clock-measure-tick! c t)
-  (trigger (clock-measure-vent c) (make-clock-event c t)))
-
-(define (clock-beat-tick! c t)
-  (define beat (clock-beat c))
-  (when (= (modulo beat (clock-measure-length c)) 0)
-    (clock-measure-tick! c t))
-  (trigger (clock-beat-vent c) (make-clock-event c t)))
-
-(define (clock-pulse-tick! c t)
-  (define beat (clock-beat c))
-  (define pulse (clock-pulse c))
-  (trigger (clock-pulse-vent c) (make-clock-event c t))
-  (when (= 0 pulse)
-    (clock-beat-tick! c t))
-  (define raw-new-pulse (+ pulse 1))
-  (define new-pulse (modulo raw-new-pulse (clock-ppqn c)))
-  (define new-beat (+ beat (floor (/ raw-new-pulse (clock-ppqn c)))))
-  (set-clock-beat! c new-beat)
-  (set-clock-pulse! c new-pulse))
-
-(define (clock-tick-tick! c t)
-  (trigger (clock-tick-vent c) (make-clock-event c t)))
-
 (define (clock-tick! c)
   (define t (now))
-  (clock-tick-tick! c t)
   (define since (- t (clock-previous-at c)))
   (define every-ms (ppqn->ms (clock-bpm c) (clock-ppqn c)))
   (when (<= every-ms since)
-    (clock-pulse-tick! c t)
+    (define beat (clock-beat c))
+    (define pulse (clock-pulse c))
+    (define clock-event (make-clock-event c t))
+    ; New Pulse.
+    (trigger (clock-pulse-vent c) clock-event)
+    (when (= 0 pulse)
+      ; New beat.
+      (trigger (clock-beat-vent c) clock-event)
+      (when (= (modulo beat (clock-measure-length c)) 0)
+        ; New measure.
+        (trigger (clock-measure-vent c) clock-event)))
+    (define raw-new-pulse (+ pulse 1))
+    (set-clock-beat! c (+ beat (floor (/ raw-new-pulse (clock-ppqn c)))))
+    (set-clock-pulse! c (modulo raw-new-pulse (clock-ppqn c)))
     (set-clock-previous-at! c t)))
 
 (define (clock-start! c)
@@ -76,13 +61,6 @@
 
 (define (clock-stop! c)
   (set-clock-running?! c #f))
-
-(define (clock-at! c t cb)
-  (define (listener e)
-    (when (<= (clock-event-t e) t)
-      (cb e)
-      (remove-listener! (clock-tick-vent (clock-event-clock e)) listener)))
-  (add-listener! (clock-tick-vent c) listener))
 
 (define (clock-on! c beats cb)
   (define (new-cb e)
@@ -136,5 +114,6 @@
   new-cb)
 
 (define (clock-clear! c)
-  (clear-listeners! (clock-tick-vent c))
-  (clear-listeners! (clock-pulse-vent c)))
+  (clear-listeners! (clock-pulse-vent c))
+  (clear-listeners! (clock-beat-vent c))
+  (clear-listeners! (clock-measure-vent c)))
