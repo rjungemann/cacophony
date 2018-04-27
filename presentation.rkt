@@ -31,6 +31,8 @@
 (engine-wavetable)
 (engine-subtr)
 (engine-info)
+; Record audio from ChucK
+#| (engine-rec "presentation.wav") |#
 ; Set BPM
 (set-bpm 140)
 

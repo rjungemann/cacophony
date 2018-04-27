@@ -19,8 +19,9 @@
 (define current-fluid-args
   (make-parameter
     (string-split
-      (or (environment-variables-ref (current-environment-variables) #"FLUIDSYNTH_ARGS")
-          "")
+      (bytes->string/utf-8
+        (or (environment-variables-ref (current-environment-variables) #"FLUIDSYNTH_ARGS")
+            #""))
       ";")))
 
 (define current-fluid-soundfont-path

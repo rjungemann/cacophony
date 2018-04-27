@@ -35,8 +35,9 @@
 (define current-engine-chuck-args
   (make-parameter
     (string-split
-      (or (environment-variables-ref (current-environment-variables) #"CHUCK_ARGS")
-          "")
+      (bytes->string/utf-8
+        (or (environment-variables-ref (current-environment-variables) #"CHUCK_ARGS")
+            #""))
       ";")))
 
 (define current-engine-chuck-port
