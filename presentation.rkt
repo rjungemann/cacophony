@@ -39,10 +39,10 @@
 ;; -----------
 
 ; Make music sequences in an MML-like language.
-(fluid-alm-run
-  (alm o6 l8 a4 b c a4 c4 a4 b c g4 f e))
-(fluid-alm-run
-  (alm o5 l4 a > g f2 < a > g f2))
+(fluid-alm-run 1
+  (alm o6 l8 a4 b c a4 c4 a4 b c g4 c4 a2))
+(fluid-alm-run 1
+  (alm o5 l4 a > g f2 < a > g f2 a2))
 
 ;; ----------
 ;; DSL #2: ck
@@ -147,7 +147,8 @@
   (define sender (add-sender "127.0.0.1" port))
   (define trig (rotator (list #t #t #t #t #f #t)))
   (define slide (rotator (list #f #f #t #f #f #f #f)))
-  (define note (rotator '(24 24 27 24 34 36 22)))
+  (define note (rotator '(24 24 27 24 27 36 22
+                          24 24 27 24 34 36 22)))
   (set! bass
     (every (8n)
       (when (trig)

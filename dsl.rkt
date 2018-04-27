@@ -420,8 +420,8 @@
               (equal? (first note) 'noteoff))
       (after (last note) (cb note)))))
 
-(define (fluid-alm-run notes)
+(define (fluid-alm-run channel notes)
   (alm-run notes
     (λ (n)
-      (fluid-send! (format "~a ~a ~a ~a" (first n) 1 (second n) (third n)))
+      (fluid-send! (format "~a ~a ~a ~a" (first n) channel (second n) (third n)))
       (fluid-flush!))))
