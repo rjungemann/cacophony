@@ -8,21 +8,28 @@
   remove-listener!
   clear-listeners!)
 
-(struct event-emitter (listeners))
+(struct event-emitter (listeners mutex))
 
 (define (make-event-emitter)
-  (event-emitter (mutable-set)))
+  (event-emitter (mutable-set) (make-semaphore 1)))
 
 (define (trigger evt . args)
-  (define l (set->list (event-emitter-listeners evt)))
-  (for ([callback l])
-    (apply callback args)))
+  (call-with-semaphore (event-emitter-mutex evt)
+    (λ ()
+      (for ([callback (event-emitter-listeners evt)])
+        (apply callback args)))))
 
 (define (add-listener! evt callback)
-  (set-add! (event-emitter-listeners evt) callback))
+  (call-with-semaphore (event-emitter-mutex evt)
+    (λ ()
+      (set-add! (event-emitter-listeners evt) callback))))
 
 (define (remove-listener! evt callback)
-  (set-remove! (event-emitter-listeners evt) callback))
+  (call-with-semaphore (event-emitter-mutex evt)
+    (λ ()
+      (set-remove! (event-emitter-listeners evt) callback))))
 
 (define (clear-listeners! evt)
-  (set-clear! (event-emitter-listeners evt)))
+  (call-with-semaphore (event-emitter-mutex evt)
+    (λ ()
+      (set-clear! (event-emitter-listeners evt)))))
