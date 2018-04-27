@@ -182,6 +182,9 @@
 (define-macro (next . body)
   `(clock-next-beat! (current-clock) (λ (_) (begin ,@body))))
 
+(define-macro (come-in . body)
+  `(clock-next-measure! (current-clock) (λ (_) (begin ,@body))))
+
 (define-macro (after beats . body)
   `(clock-after! (current-clock) ,beats (λ (_) (begin ,@body))))
 
@@ -321,6 +324,11 @@
 (define (rotate-right l n)
   (append (take-right l n) (drop-right l n)))
 
+(define (rotate l n)
+  (if (< n 0)
+    (rotate-left l n)
+    (rotate-right l n)))
+
 ; -------
 ; Rotator
 ; -------
@@ -381,7 +389,7 @@
         (set! bucket (drop bucket total-steps))
         (set! steps (append steps (list #t))))
       (set! steps (append steps (list #f)))))
-  (rotate-left steps offset))
+  (rotate steps offset))
 
 ; ------
 ; Markov

@@ -258,13 +258,18 @@
         (decl 'int 'port))
     (=> (call 'me.arg (int 1))
         (decl 'string 'filename))
+    (=> (call 'me.arg (int 2))
+        'Std.atoi
+        (decl 'float 'mix))
     (decl 'OscIn 'oin)
     (decl 'OscMsg 'msg)
     (=> 'port 'oin.port)
     (call 'oin.addAddress (string "/hit,f"))
     (decl 'SndBuf 'buf)
+    (decl 'PRCRev 'r)
+    (=> 'mix 'r.mix)
     (=> 'filename 'buf.read)
-    (=> 'buf dac)
+    (=> 'buf 'r dac)
     (=> (int 0) 'buf.loop)
     (=> (int 0) 'buf.rate)
     (while true
@@ -320,6 +325,9 @@
     (=> (call 'me.arg (int 14))
         'Std.atoi
         (decl 'float 'filterenvrelease))
+    (=> (call 'me.arg (int 15))
+        'Std.atoi
+        (decl 'float 'mix))
 
     (decl 'OscIn 'oin)
     (decl 'OscMsg 'msg)
@@ -328,7 +336,9 @@
     (call 'oin.addAddress (string "/key-off"))
     (decl 'Subtr 's)
     (=> 'filename 's.read)
-    (=> 's dac)
+    (decl 'PRCRev 'r)
+    (=> 'mix 'r.mix)
+    (=> 's 'r dac)
     (=> (float 36.0) 'Std.mtof 's.freq)
 
     (=> (decl 'Envelope 'e) blackhole)
@@ -386,10 +396,11 @@
 (define (engine-rec filename)
   (engine-shredule-code rec-code filename))
 
-(define (engine-sampler port filename)
+(define (engine-sampler port filename mix)
   (engine-shredule-code engine-sampler-code
                         (number->string port)
-                        filename))
+                        filename
+                        (number->string mix)))
 
 (define (engine-synth . args)
   (apply engine-shredule-code (append (list engine-synth-code)

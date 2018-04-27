@@ -86,39 +86,56 @@
 ;; ----
 
 ; Setup
+(define atmos #f)
 (define bass-drum #f)
 (define snare-drum #f)
 (define closed-hh-evolver #f)
 (define closed-hh #f)
 (define bass #f)
 (define lead #f)
+(define lead-oct #f)
+
+; Atmos
+(come-in
+  (define port-1 (random-port))
+  (define port-2 (random-port))
+  (define shred-1 (engine-sampler port-1 "examples/fade.wav" 1.0))
+  (define shred-2 (engine-sampler port-2 "examples/swell.wav" 1.0))
+  (define toggle (rotator (list #f #f #t #f #f #t #f #t)))
+  (define sender-1 (add-sender "127.0.0.1" port-1))
+  (define sender-2 (add-sender "127.0.0.1" port-2))
+  (set! atmos
+    (every (* 2 (1n))
+      (if (toggle)
+        (<< sender-1 #"/hit" 0.5)
+        (<< sender-2 #"/hit" 0.5)))))
 
 ; Bass drum
-(next
+(come-in
   (define port (random-port))
-  (define shred (engine-sampler port "examples/tr-606/bass-drum.wav"))
+  (define shred (engine-sampler port "examples/tr-606/bass-drum.wav" 0.3))
   (define sender (add-sender "127.0.0.1" port))
   (set! bass-drum
     (every (4n)
       (<< sender #"/hit" 0.5))))
 
 ; Snare drum
-(next
+(come-in
   (define port (random-port))
-  (define shred (engine-sampler port "examples/tr-606/snare-drum.wav"))
+  (define shred (engine-sampler port "examples/tr-606/snare-drum.wav" 0.4))
   (define sender (add-sender "127.0.0.1" port))
   (define euclid (rotator (euclidian 3 8 2)))
   (define trig (rotator (list #t #t #t #t #t #f)))
   (set! snare-drum
     (every (8n)
       (when (and (euclid) (trig))
-        (<< sender #"/hit" 0.15)))))
+        (<< sender #"/hit" 0.1)))))
 
 ; Hi-hats
-(next
+(come-in
   (define rhythm (box (list #t #f #f #t)))
   (define port (random-port))
-  (define shred (engine-sampler port "examples/tr-606/closed-hh.wav"))
+  (define shred (engine-sampler port "examples/tr-606/closed-hh.wav" 0.55))
   (define sender (add-sender "127.0.0.1" port))
   (define (rules n)
     (cond [(equal? n #t) (list #t #f)]
@@ -137,15 +154,16 @@
   (set! closed-hh
     (every (16n)
       (when (tick)
-        (<< sender #"/hit" 0.10)))))
+        (<< sender #"/hit" 0.05)))))
 
 ; Bass
-(next
+(come-in
   (define port (random-port))
   (define shred (engine-synth port "examples/ensemble/AKWF_0001.wav" 0.5
                                    0.07 2000 400 0.05
                                    1 350 0.7 500
-                                   15 550 0.7 400))
+                                   15 550 0.7 400
+                                   0.2))
   (define sender (add-sender "127.0.0.1" port))
   (define trig (rotator (list #t #t #t #t #f #t)))
   (define slide (rotator (list #f #f #t #f #f #f #f)))
@@ -159,16 +177,19 @@
           (after (16n) (<< sender #"/key-off")))))))
 
 ; Lead
-(next
+(come-in
   (define port (random-port))
   (define shred (engine-synth port "examples/ensemble/AKWF_0096.wav" 0.5
                                    0.07 2000 400 0.05
-                                   1 350 0.7 500
-                                   15 550 0.7 400))
+                                   1 350 0.6 700
+                                   15 550 0.6 600
+                                   0.6))
   (define trig (rotator (list #t #t #f #t #t #f #t #f
                               #t #t #f #t #t #f #f #f)))
   (define notes (list 36 43 39 43 36 39 43 36 44 43
                       36 34 39 39 46 48 34 36 39 36))
+  (define octave (rotator (list 2 3)))
+  (define current-octave 2)
   (define markov (make-markov notes 1))
   (define note (markov-random markov))
   (define (next-note)
@@ -176,11 +197,17 @@
     (set! note (markov-next markov note))
     n)
   (define sender (add-sender "127.0.0.1" port))
+  (set! lead-oct
+    (every (* 4 (1n))
+      (set! current-octave (octave))))
   (set! lead
     (every (8n)
       (when (trig)
-        (<< sender #"/key-on" (+ (next-note) 12) 0.5)
+        (<< sender #"/key-on" (+ (next-note) (* 12 current-octave)) 0.25)
         (after (16n) (<< sender #"/key-off"))))))
+
+; Stop atmos
+(remove-pulse-listener atmos)
 
 ; Stop bass drum
 (remove-pulse-listener bass-drum)
@@ -197,3 +224,4 @@
 
 ; Stop lead
 (remove-pulse-listener lead)
+(remove-pulse-listener lead-oct)
