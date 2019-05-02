@@ -16,7 +16,7 @@ Intended to be used with [TSlime.vim](https://github.com/jgdavey/tslime.vim).
 
 ```sh
 # Make sure you have Racket installed.
-brew install minimal-racket
+brew cask install racket
 
 # Some optional stuff you can install.
 brew install rlwrap chuck fluid-synth
