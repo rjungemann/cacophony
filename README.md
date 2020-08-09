@@ -12,6 +12,8 @@ Juggle OSC connections. Schedule events to a beat. Synthesize sounds and trigger
 
 Intended to be used with [TSlime.vim](https://github.com/jgdavey/tslime.vim).
 
+See a [video of Cacophony in action](https://github.com/rjungemann/cacophony/blob/master/assets/Cacophony.mp4).
+
 ## Setup
 
 ```sh
